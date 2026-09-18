@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: veriscope-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: veriscope-postgres
+    environment:
+      POSTGRES_DB: veriscope
+      POSTGRES_USER: veriscope_user
+      POSTGRES_PASSWORD: veriscope_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  extraction-service:
+    build:
+      context: .
+      dockerfile: services/extraction/Dockerfile
+    container_name: veriscope-extraction
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+      - postgres
+
+  filtering-service:
+    build:
+      context: .
+      dockerfile: services/filtering/Dockerfile
+    container_name: veriscope-filtering
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  entity-profile-service:
+    build:
+      context: .
+      dockerfile: services/entity-profile/Dockerfile
+    container_name: veriscope-entity-profile
+    ports:
+      - "8002:8002"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  contextual-validation-service:
+    build:
+      context: .
+      dockerfile: services/contextual-validation/Dockerfile
+    container_name: veriscope-contextual-validation
+    ports:
+      - "8003:8003"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  global-discovery-service:
+    build:
+      context: .
+      dockerfile: services/global-discovery/Dockerfile
+    container_name: veriscope-global-discovery
+    ports:
+      - "8004:8004"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  multilingual-service:
+    build:
+      context: .
+      dockerfile: services/multilingual/Dockerfile
+    container_name: veriscope-multilingual
+    ports:
+      - "8005:8005"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  fact-checking-service:
+    build:
+      context: .
+      dockerfile: services/fact-checking/Dockerfile
+    container_name: veriscope-fact-checking
+    ports:
+      - "8006:8006"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  source-intelligence-service:
+    build:
+      context: .
+      dockerfile: services/source-intelligence/Dockerfile
+    container_name: veriscope-source-intelligence
+    ports:
+      - "8007:8007"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  whatsapp-bot-service:
+    build:
+      context: .
+      dockerfile: services/whatsapp-bot/Dockerfile
+    container_name: veriscope-whatsapp-bot
+    ports:
+      - "8008:8008"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+      - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-veriscope_meta_verify_token_2026}
+      - META_APP_SECRET=${META_APP_SECRET:-veriscope_meta_app_secret_test}
+    depends_on:
+      - redis
+
+  brief-clustering-service:
+    build:
+      context: .
+      dockerfile: services/brief-clustering/Dockerfile
+    container_name: veriscope-brief-clustering
+    ports:
+      - "8009:8009"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+    depends_on:
+      - redis
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: frontend/dashboard/Dockerfile
+    container_name: veriscope-dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - extraction-service
+      - filtering-service
+      - fact-checking-service
+      - brief-clustering-service
+      - whatsapp-bot-service
+
+volumes:
+  redis-data:
+  postgres-data:

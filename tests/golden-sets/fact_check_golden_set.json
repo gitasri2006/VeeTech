@@ -1,0 +1,56 @@
+[
+  {
+    "id": "gfc-001",
+    "title": "Global Semiconductor Accord Signed in Geneva by 40 Nations",
+    "text": "Delegates from forty nations signed the multilateral semiconductor accord to harmonize supply chain standards.",
+    "source": "reuters.com",
+    "source_tier": 1,
+    "ground_truth_verdict": "Verified",
+    "expected_needs_review": false
+  },
+  {
+    "id": "gfc-002",
+    "title": "Miracle Cure 100% Eradicates All Viruses in 24 Hours with Herbal Extract",
+    "text": "Viral messages claim a newly discovered herbal extract completely cures viral infections with zero side effects.",
+    "source": "viral-hoax.xyz",
+    "source_tier": 3,
+    "ground_truth_verdict": "Likely False",
+    "expected_needs_review": true
+  },
+  {
+    "id": "gfc-003",
+    "title": "Alleged Leak Hints at Unconfirmed Megamerger Between Tech Giants",
+    "text": "Disputed rumor circulates regarding confidential discussions between rival cloud providers.",
+    "source": "techrumors.net",
+    "source_tier": 3,
+    "ground_truth_verdict": "Disputed",
+    "expected_needs_review": true
+  },
+  {
+    "id": "gfc-004",
+    "title": "Reserve Bank of India Keeps Benchmark Repo Rate Steady at 6.5%",
+    "text": "The Monetary Policy Committee voted unanimously to maintain benchmark lending rates following quarterly inflation review.",
+    "source": "thehindu.com",
+    "source_tier": 1,
+    "ground_truth_verdict": "Verified",
+    "expected_needs_review": false
+  },
+  {
+    "id": "gfc-005",
+    "title": "Deepfake Video of Prime Minister Circulating on Messaging Groups",
+    "text": "A manipulated deepfake speech altered the audio to fabricate policy statements during local elections.",
+    "source": "telegram_forward",
+    "source_tier": 3,
+    "ground_truth_verdict": "Likely False",
+    "expected_needs_review": true
+  },
+  {
+    "id": "gfc-006",
+    "title": "Unverified Blog Claims Flying Cars Approved for Commercial Commute Next Month",
+    "text": "An anonymous blog claims regulatory clearance has been granted without official civil aviation corroboration.",
+    "source": "unverified-blog.xyz",
+    "source_tier": 3,
+    "ground_truth_verdict": "Unverified",
+    "expected_needs_review": false
+  }
+]

@@ -1,0 +1,167 @@
+[
+  {
+    "id": "gv-001",
+    "entity_name": "Apple",
+    "entity_type": "Company",
+    "disambiguation_context": "Apple Inc is a global consumer electronics and software corporation producing iPhones, Macs, iPads, and iOS.",
+    "exclusion_terms": ["orchard", "fruit", "pie", "recipe", "cider", "harvest"],
+    "article_title": "Apple Unveils M4 Chip with Massive AI Processing Capabilities in New MacBook Pro",
+    "article_text": "Apple today announced the M4 family of chips, bringing unprecedented neural processing performance to the Mac line. CEO Tim Cook highlighted the unified memory architecture.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-002",
+    "entity_name": "Apple",
+    "entity_type": "Company",
+    "disambiguation_context": "Apple Inc is a global consumer electronics and software corporation producing iPhones, Macs, iPads, and iOS.",
+    "exclusion_terms": ["orchard", "fruit", "pie", "recipe", "cider", "harvest"],
+    "article_title": "Honeycrisp Apple Harvest Reaches Record High in Washington State Orchards",
+    "article_text": "Local farmers reported exceptional yields across honeycrisp and gala apple orchards this autumn, providing fresh fruit for cider and pie recipes.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-003",
+    "entity_name": "Tesla",
+    "entity_type": "Company",
+    "disambiguation_context": "Tesla Inc is an electric vehicle and clean energy company founded by Elon Musk, manufacturing cars and Megapack batteries.",
+    "exclusion_terms": ["physicist", "museum", "19th century", "inventor Nikola", "serbian museum"],
+    "article_title": "Tesla Expands Supercharger Network Across 500 New Highway Corridors",
+    "article_text": "Tesla has activated hundreds of V4 Superchargers open to non-Tesla electric vehicles, accelerating charging infrastructure deployment across North America.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-004",
+    "entity_name": "Tesla",
+    "entity_type": "Company",
+    "disambiguation_context": "Tesla Inc is an electric vehicle and clean energy company founded by Elon Musk, manufacturing cars and Megapack batteries.",
+    "exclusion_terms": ["physicist", "museum", "19th century", "inventor Nikola", "serbian museum"],
+    "article_title": "Belgrade Museum Celebrates Life and Inventions of Nikola Tesla",
+    "article_text": "Historians and physicists gathered at the Serbian museum to commemorate the 19th century inventor Nikola Tesla and his pioneering alternating current motors.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-005",
+    "entity_name": "Tata Motors",
+    "entity_type": "Company",
+    "disambiguation_context": "Tata Motors is an Indian multinational automotive manufacturing company producing commercial and passenger vehicles, EVs, and owning Jaguar Land Rover.",
+    "exclusion_terms": ["tata tea", "tata salt", "tata consumer", "beverage", "tea garden"],
+    "article_title": "Tata Motors Delivers 1,000 Electric Buses to Bengaluru Public Transport",
+    "article_text": "Tata Motors has successfully deployed its Starbus EV fleet in Karnataka, reducing municipal transport emissions significantly.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-006",
+    "entity_name": "Tata Motors",
+    "entity_type": "Company",
+    "disambiguation_context": "Tata Motors is an Indian multinational automotive manufacturing company producing commercial and passenger vehicles, EVs, and owning Jaguar Land Rover.",
+    "exclusion_terms": ["tata tea", "tata salt", "tata consumer", "beverage", "tea garden"],
+    "article_title": "Tata Tea Premium Launches New Festive Packaging for Assam Blends",
+    "article_text": "Tata Consumer Products expanded its beverage retail footprint with specialty blends harvested directly from certified organic tea gardens in Assam.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-007",
+    "entity_name": "Stripe",
+    "entity_type": "Company",
+    "disambiguation_context": "Stripe is a global financial technology company that provides online payment processing APIs and banking infrastructure for internet businesses.",
+    "exclusion_terms": ["zebra", "tiger", "fabric", "clothing pattern", "candy cane", "stripes on jersey"],
+    "article_title": "Stripe Processes Over $1 Trillion in Total Payment Volume Across Global Merchants",
+    "article_text": "Fintech giant Stripe announced milestone processing figures driven by rapid enterprise platform expansion and new billing automation tools.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-008",
+    "entity_name": "Stripe",
+    "entity_type": "Company",
+    "disambiguation_context": "Stripe is a global financial technology company that provides online payment processing APIs and banking infrastructure for internet businesses.",
+    "exclusion_terms": ["zebra", "tiger", "fabric", "clothing pattern", "candy cane", "stripes on jersey"],
+    "article_title": "Wildlife Biologists Study Rare Tiger Stripe Variations in Sundarbans",
+    "article_text": "Camera traps captured unique stripe patterns among Bengal tigers in the mangrove forests, aiding automated identification algorithms.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-009",
+    "entity_name": "Infosys",
+    "entity_type": "Company",
+    "disambiguation_context": "Infosys Limited is an Indian multinational information technology company that provides business consulting, information technology and outsourcing services.",
+    "exclusion_terms": ["narayana murthy marathon", "sports sponsorship", "cricket tournament"],
+    "article_title": "Infosys Partners with European Telecom Provider for Cloud Migration Project",
+    "article_text": "Infosys Topaz generative AI suite will be integrated to modernize legacy infrastructure across five Nordic data centers.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-010",
+    "entity_name": "Amazon",
+    "entity_type": "Company",
+    "disambiguation_context": "Amazon.com Inc is a multinational technology company focusing on e-commerce, cloud computing (AWS), online advertising, and digital streaming.",
+    "exclusion_terms": ["rainforest", "indigenous tribes", "basin", "river wildlife", "deforestation rate"],
+    "article_title": "Amazon Web Services Commits $10 Billion to Next-Gen Sovereign Cloud Hubs",
+    "article_text": "AWS announced major infrastructure investments across European regions to comply with localized data sovereignty and AI training mandates.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-011",
+    "entity_name": "Amazon",
+    "entity_type": "Company",
+    "disambiguation_context": "Amazon.com Inc is a multinational technology company focusing on e-commerce, cloud computing (AWS), online advertising, and digital streaming.",
+    "exclusion_terms": ["rainforest", "indigenous tribes", "basin", "river wildlife", "deforestation rate"],
+    "article_title": "Satellite Data Shows Amazon Rainforest Deforestation Drops 30%",
+    "article_text": "Environmental researchers monitoring the Amazon basin reported positive trends in rainforest conservation and wildlife corridor recovery.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-012",
+    "entity_name": "Oracle",
+    "entity_type": "Company",
+    "disambiguation_context": "Oracle Corporation is an American multinational computer technology corporation providing database software, cloud systems, and enterprise software products.",
+    "exclusion_terms": ["ancient greece", "delphi", "mythology", "prophecy", "fortune teller"],
+    "article_title": "Oracle Database 23ai Adds Vector Search for Enterprise Generative AI Workloads",
+    "article_text": "Oracle Corporation announced general availability of its AI vector search features integrated directly into relational database engines.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-013",
+    "entity_name": "Oracle",
+    "entity_type": "Company",
+    "disambiguation_context": "Oracle Corporation is an American multinational computer technology corporation providing database software, cloud systems, and enterprise software products.",
+    "exclusion_terms": ["ancient greece", "delphi", "mythology", "prophecy", "fortune teller"],
+    "article_title": "Archaeologists Uncover Inscribed Tablets Near Ancient Oracle of Delphi",
+    "article_text": "Excavations at the ancient Greek site revealed sacrificial artifacts and historic inscriptions describing consultations with the mythical oracle.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  },
+  {
+    "id": "gv-014",
+    "entity_name": "NVIDIA",
+    "entity_type": "Company",
+    "disambiguation_context": "NVIDIA Corporation designs GPUs for gaming and professional markets, as well as chip units for AI computation and autonomous machines.",
+    "exclusion_terms": ["pc gaming chair", "cosplay", "fan merchandise"],
+    "article_title": "NVIDIA Blackwell B200 GPUs Enter High Volume Production Across Global Foundries",
+    "article_text": "Jensen Huang confirmed that hyperscale cloud providers have begun receiving commercial shipments of Blackwell AI accelerator clusters.",
+    "ground_truth_relevant": true,
+    "expected_status": "approved"
+  },
+  {
+    "id": "gv-015",
+    "entity_name": "Shell",
+    "entity_type": "Company",
+    "disambiguation_context": "Shell plc is a British multinational oil and gas company exploring hydrocarbons, refining, and renewable energy investments.",
+    "exclusion_terms": ["seashell", "hermit crab", "beach souvenir", "tortoise shell", "pasta recipe"],
+    "article_title": "Marine Biologists Discover Giant Sea Shell Formations off Pacific Atoll",
+    "article_text": "Submersible surveys documented massive coral reef structures formed from calcium-rich conch and clam seashells over millennia.",
+    "ground_truth_relevant": false,
+    "expected_status": "rejected"
+  }
+]
