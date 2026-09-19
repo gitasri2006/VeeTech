@@ -1,6 +1,7 @@
 """
 Discovery Local Multi-Service Orchestrator (Subprocess Engine)
 Launches all 10 agent microservices on their designated TRD ports (8000-8009) concurrently.
+Loads configuration automatically from .env.
 """
 
 import os
@@ -21,6 +22,24 @@ SERVICES = [
     ("brief-clustering", 8009),
 ]
 
+def load_dotenv_file(dotenv_path: str, target_env: dict):
+    """Load key-value pairs from a .env file into environment dictionary."""
+    if not os.path.exists(dotenv_path):
+        return
+    try:
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    target_env[key] = val
+    except Exception as e:
+        print(f"Warning: Failed to load .env: {e}", flush=True)
+
 def main():
     print("=================================================================", flush=True)
     print("       DISCOVERY AI-AGENT MULTI-SERVICE LOCAL RUNNER             ", flush=True)
@@ -29,6 +48,10 @@ def main():
     repo_root = os.path.dirname(os.path.abspath(__file__))
     env = os.environ.copy()
     env["PYTHONPATH"] = repo_root
+    
+    dotenv_path = os.path.join(repo_root, ".env")
+    load_dotenv_file(dotenv_path, env)
+    print(f"[Discovery] Loaded environment settings from: {dotenv_path}", flush=True)
 
     procs = []
     for name, port in SERVICES:
