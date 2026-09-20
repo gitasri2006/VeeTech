@@ -77,7 +77,7 @@ export const WhatsAppBotView: React.FC = () => {
       <div>
         <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
           <Smartphone className="w-4 h-4" />
-          <span>Public Verification Bot Agent (Agent 10)</span>
+          <span>Public Verification Bot</span>
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">WhatsApp Bot Moderation & Analytics Hub</h1>
         <p className="text-sm text-slate-400 mt-1">

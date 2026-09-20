@@ -110,7 +110,7 @@ class MediaAsset(BaseModel):
 class SocialPost(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     article_id: str
-    platform: str  # Instagram, X, YouTube, Facebook, Telegram, Reddit, TikTok
+    platform: str  # Instagram, X, YouTube, Facebook, Telegram, Reddit
     handle: str
     follower_tier: str = "standard"
     engagement_metrics: Dict[str, Any] = Field(default_factory=dict)

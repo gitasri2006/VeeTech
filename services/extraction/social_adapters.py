@@ -9,7 +9,6 @@ Supported Platforms:
 - Facebook (Facebook Graph API)
 - Telegram (Telegram Bot API - Public Channels)
 - Reddit (Reddit API / PRAW)
-- TikTok (Official TikTok API)
 """
 
 from datetime import datetime, timezone
@@ -234,34 +233,6 @@ class RedditAdapter(SocialPlatformAdapter):
         )
 
 
-class TikTokAdapter(SocialPlatformAdapter):
-    platform_name: str = "tiktok"
-
-    def parse_payload(self, raw_data: Dict[str, Any]) -> NormalizedSocialContent:
-        caption = raw_data.get("caption", "").strip()
-        transcript = raw_data.get("transcript", "").strip()
-        author = raw_data.get("author_username", "tiktok_user")
-
-        body_text = f"Caption: {caption}\nTranscript: {transcript}" if transcript else caption
-
-        return NormalizedSocialContent(
-            title=f"TikTok by @{author}: {caption[:60]}...",
-            body_text=body_text,
-            author_handle=f"@{author.lstrip('@')}",
-            published_at=raw_data.get("create_time") or datetime.now(timezone.utc),
-            platform="tiktok",
-            post_url=raw_data.get("share_url", f"https://tiktok.com/@{author}/video/{raw_data.get('video_id', '1')}"),
-            follower_tier=raw_data.get("follower_tier", "standard"),
-            engagement_metrics={
-                "digg_count": raw_data.get("digg_count", 0),
-                "play_count": raw_data.get("play_count", 0),
-            },
-            media_urls=[raw_data.get("video_url", "")],
-            media_type=MediaType.VIDEO,
-            comments_sample=raw_data.get("comments", [])[:5],
-        )
-
-
 # Factory lookup
 SOCIAL_ADAPTERS: Dict[str, SocialPlatformAdapter] = {
     "instagram": InstagramAdapter(),
@@ -271,9 +242,9 @@ SOCIAL_ADAPTERS: Dict[str, SocialPlatformAdapter] = {
     "facebook": FacebookAdapter(),
     "telegram": TelegramAdapter(),
     "reddit": RedditAdapter(),
-    "tiktok": TikTokAdapter(),
 }
 
 
 def get_social_adapter(platform: str) -> Optional[SocialPlatformAdapter]:
     return SOCIAL_ADAPTERS.get(platform.lower().strip())
+

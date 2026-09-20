@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    allowedHosts: [
+      '.trycloudflare.com'
+    ],
     proxy: {
       '/api/extraction': { target: 'http://localhost:8000', rewrite: (path) => path.replace(/^\/api\/extraction/, '') },
       '/api/filtering': { target: 'http://localhost:8001', rewrite: (path) => path.replace(/^\/api\/filtering/, '') },

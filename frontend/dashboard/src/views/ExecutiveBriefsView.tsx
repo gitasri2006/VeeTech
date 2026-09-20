@@ -36,7 +36,7 @@ export const ExecutiveBriefsView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
             <Sparkles className="w-4 h-4" />
-            <span>Brief & Clustering Agent (Agent 9)</span>
+            <span>Executive Briefs & Grounded Clustering</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Executive Digest & Story Clusters</h1>
           <p className="text-sm text-slate-400 mt-1">

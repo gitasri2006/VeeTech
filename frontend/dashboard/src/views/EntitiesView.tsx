@@ -55,7 +55,7 @@ export const EntitiesView: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
             <Building2 className="w-4 h-4" />
-            <span>Entity Profile Agent (Agent 3)</span>
+            <span>Entity Profiles & Disambiguation</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Entity & Client Management</h1>
           <p className="text-sm text-slate-400 mt-1">

@@ -107,8 +107,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer System Info */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-400 flex items-center justify-between">
-        <span>Discovery v1.0.0</span>
-        <span className="text-emerald-500">Live AI Agents</span>
+        <span>Discovery v2.0.0</span>
+        <span className="text-emerald-500 flex items-center space-x-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1"></span>
+          <span>System Active</span>
+        </span>
       </div>
     </aside>
   );

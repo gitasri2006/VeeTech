@@ -136,7 +136,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
         <div>
           <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
             <Newspaper className="w-4 h-4" />
-            <span>Filtering & Contextual Validation (Agents 5 & 6)</span>
+            <span>Real-Time Stream & Contextual Validation</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Unified Real-Time Story Stream</h1>
         </div>

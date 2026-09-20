@@ -15,7 +15,6 @@ from services.extraction.social_adapters import (
     RedditAdapter,
     TelegramAdapter,
     FacebookAdapter,
-    TikTokAdapter,
 )
 from services.extraction.multimodal_processor import (
     ImageProcessor,

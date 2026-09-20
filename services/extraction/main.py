@@ -4,7 +4,7 @@ Compliant with PRD Section 7.2, 8.2, 8.3 and TRD Section 5.2
 
 Capabilities:
 1. Web & RSS/Atom Extraction (with XML fallback and SPA detection).
-2. Social Platform Adapters: Instagram, X/Twitter, YouTube, Facebook, Telegram, Reddit, TikTok.
+2. Social Platform Adapters: Instagram, X/Twitter, YouTube, Facebook, Telegram, Reddit.
 3. Multimodal Sub-Modules:
    - Image: OCR embedded text + visual captioning.
    - Audio: ASR speech-to-text with timestamps.
@@ -18,6 +18,7 @@ import hashlib
 import logging
 import re
 import urllib.parse
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import xml.etree.ElementTree as ET
@@ -73,7 +74,7 @@ class URLExtractRequest(BaseModel):
 
 
 class SocialExtractRequest(BaseModel):
-    platform: str = Field(..., description="Platform: instagram, x, youtube, facebook, telegram, reddit, tiktok")
+    platform: str = Field(..., description="Platform: instagram, x, youtube, facebook, telegram, reddit")
     raw_payload: Dict[str, Any] = Field(..., description="Platform specific API response or webhook payload")
     source_tier: Optional[int] = 2
 
@@ -495,7 +496,7 @@ async def extract_url_endpoint(request: URLExtractRequest):
 @app.post("/extract/social", response_model=Dict[str, Any], tags=["Extraction"])
 async def extract_social_endpoint(request: SocialExtractRequest):
     """
-    Ingest a social post (Instagram, X, YouTube, Facebook, Telegram, Reddit, TikTok).
+    Ingest a social post (Instagram, X, YouTube, Facebook, Telegram, Reddit).
     Normalizes metadata into an Article row and persists a SocialPost record.
     """
     adapter = get_social_adapter(request.platform)

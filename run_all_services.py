@@ -53,8 +53,23 @@ def main():
     load_dotenv_file(dotenv_path, env)
     print(f"[Discovery] Loaded environment settings from: {dotenv_path}", flush=True)
 
+    PORT_ENV_MAP = {
+        "extraction": "EXTRACTION_SERVICE_PORT",
+        "filtering": "FILTERING_SERVICE_PORT",
+        "entity-profile": "ENTITY_PROFILE_SERVICE_PORT",
+        "contextual-validation": "CONTEXTUAL_VALIDATION_SERVICE_PORT",
+        "global-discovery": "GLOBAL_DISCOVERY_SERVICE_PORT",
+        "multilingual": "MULTILINGUAL_SERVICE_PORT",
+        "fact-checking": "FACT_CHECKING_SERVICE_PORT",
+        "source-intelligence": "SOURCE_INTELLIGENCE_SERVICE_PORT",
+        "whatsapp-bot": "WHATSAPP_BOT_SERVICE_PORT",
+        "brief-clustering": "BRIEF_CLUSTERING_SERVICE_PORT",
+    }
+
     procs = []
-    for name, port in SERVICES:
+    for name, default_port in SERVICES:
+        env_key = PORT_ENV_MAP.get(name)
+        actual_port = int(env.get(env_key, default_port)) if env_key else default_port
         app_dir = os.path.join(repo_root, "services", name)
         cmd = [
             sys.executable,
@@ -66,13 +81,13 @@ def main():
             "--host",
             "0.0.0.0",
             "--port",
-            str(port),
+            str(actual_port),
             "--log-level",
             "warning",
         ]
         p = subprocess.Popen(cmd, env=env, cwd=repo_root)
-        procs.append((name, port, p))
-        print(f"[Discovery] Launched {name.upper():<22} on http://localhost:{port}", flush=True)
+        procs.append((name, actual_port, p))
+        print(f"[Discovery] Launched {name.upper():<22} on http://localhost:{actual_port}", flush=True)
 
     print("\nAll 10 services running on localhost. Press Ctrl+C to stop.\n", flush=True)
     try:

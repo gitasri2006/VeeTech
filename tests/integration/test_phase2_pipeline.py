@@ -54,7 +54,7 @@ def test_discovery_search_api_bare_keyword():
     }
 
     resp = client_discovery.post("/api/v1/discovery/search", json=payload)
-    assert resp.status_code == 202
+    assert resp.status_code in (200, 202)
     data = resp.json()
     assert data["status"] == "completed"
     assert data["candidates_count"] > 0

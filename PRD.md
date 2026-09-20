@@ -105,7 +105,7 @@ WhatsApp message received → Public Verification Bot Agent → Extraction (mult
 
 ## 7.2 Extraction Agent (Multi-Platform, Multimodal)
 - Web: RSS → static HTML → headless-browser fallback chain for JavaScript-heavy sites.
-- Social adapters: Instagram (caption, hashtags, comments, media URLs), X/Twitter (post text, thread context), YouTube (title, description, transcript/captions), Facebook (public post text, comments), Telegram (public channel messages), Reddit (post + top comments), TikTok (caption, transcript).
+- Social adapters: Instagram (caption, hashtags, comments, media URLs), X/Twitter (post text, thread context), YouTube (title, description, transcript/captions), Facebook (public post text, comments), Telegram (public channel messages), Reddit (post + top comments).
 - Image sub-module: OCR for embedded text; image captioning for visual-only content with no text.
 - Video sub-module: audio-track transcription, key-frame sampling and captioning, on-screen burned-in text extraction.
 - Audio sub-module: full speech-to-text transcription, usable for podcasts, voice notes, and radio clips.
@@ -173,7 +173,7 @@ WhatsApp message received → Public Verification Bot Agent → Extraction (mult
 - Continuous/scheduled discovery for saved entities.
 
 ## 8.2 Social Media Ingestion
-- Platform coverage at launch: Instagram, X/Twitter, YouTube, Facebook, Telegram, Reddit; TikTok as a fast-follow once API access is confirmed.
+- Platform coverage: Instagram, X/Twitter, YouTube, Facebook, Telegram, Reddit.
 - Per-platform metadata capture: author/handle, follower-count tier, engagement (likes/shares/comments), timestamp, and platform-specific context.
 - Public content only, accessed strictly through each platform's official API and terms.
 - Comment-thread sampling for sentiment/context, without ingesting private/DM content.
@@ -275,7 +275,7 @@ WhatsApp message received → Public Verification Bot Agent → Extraction (mult
 
 # 13. Risks, Compliance & Open Questions
 
-- Social platform API access: Instagram/Facebook/TikTok impose strict API approval and rate limits; official-API-only access is a hard requirement (Section 5), so budget real time for onboarding approval rather than assuming day-one access to every platform.
+- Social platform API access: Instagram/Facebook/X impose API approval and rate limits; official-API-only access is a hard requirement (Section 5), so budget real time for onboarding approval rather than assuming day-one access to every platform.
 - Multimodal compute cost: ASR, video-captioning, and deepfake-detection are GPU-intensive; benchmark cost/latency before committing to the 30-minute multimodal SLA.
 - Fact-check database coverage is far better in English than in most Indian regional languages; expect lower initial confidence there and route more of that volume to human review.
 - Machine translation quality for low-resource languages may affect semantic matching accuracy; needs per-language benchmarking.

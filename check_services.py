@@ -6,7 +6,7 @@ print("=================================================================", flush
 print("          DISCOVERY LIVE HEALTH & STATUS CHECK                   ", flush=True)
 print("=================================================================", flush=True)
 for port in range(8000, 8010):
-    url = f"http://localhost:{port}/health"
+    url = f"http://127.0.0.1:{port}/health"
     try:
         with urllib.request.urlopen(url, timeout=3) as resp:
             data = json.loads(resp.read().decode())
@@ -16,7 +16,7 @@ for port in range(8000, 8010):
 
 print("\nChecking Dashboard Frontend (Port 3000)...", flush=True)
 try:
-    with urllib.request.urlopen("http://localhost:3000/", timeout=3) as resp:
+    with urllib.request.urlopen("http://127.0.0.1:3000/", timeout=3) as resp:
         print(f"  [OK] Port 3000: Discovery Dashboard UI online (HTTP {resp.status})", flush=True)
 except Exception as exc:
     print(f"  [ERR] Port 3000: Dashboard UI Offline ({exc})", flush=True)

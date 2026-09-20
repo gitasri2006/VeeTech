@@ -44,7 +44,7 @@ export const FactCheckQueueView: React.FC = () => {
       <div>
         <div className="flex items-center space-x-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1">
           <CheckCheck className="w-4 h-4" />
-          <span>Fact-Checking & Authenticity Agent (Agent 7)</span>
+          <span>Fact-Checking & Authenticity Verification</span>
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Fact-Verification Analyst Review Queue</h1>
         <p className="text-sm text-slate-400 mt-1">

@@ -4,17 +4,35 @@ import {
 } from '../types';
 
 const API_BASE = {
-  extraction: 'http://localhost:8000',
-  filtering: 'http://localhost:8001',
-  entityProfile: 'http://localhost:8002',
-  contextualValidation: 'http://localhost:8003',
-  discovery: 'http://localhost:8004',
-  multilingual: 'http://localhost:8005',
-  factcheck: 'http://localhost:8006',
-  sources: 'http://localhost:8007',
-  whatsapp: 'http://localhost:8008',
-  briefs: 'http://localhost:8009',
+  extraction: '/api/extraction',
+  filtering: '/api/filtering',
+  entityProfile: '/api/entity-profile',
+  contextualValidation: '/api/contextual-validation',
+  discovery: '/api/discovery',
+  multilingual: '/api/multilingual',
+  factcheck: '/api/factcheck',
+  sources: '/api/sources',
+  whatsapp: '/api/whatsapp',
+  briefs: '/api/briefs',
 };
+
+export interface UnifiedSearchOptions {
+  query?: string;
+  keywords?: string[];
+  entityId?: string;
+  inputModality?: 'text' | 'image' | 'audio' | 'video';
+  targetLanguage?: string;
+  mediaFileName?: string;
+  mediaBase64?: string;
+  mediaMimeType?: string;
+  mockOcrText?: string;
+  mockTranscript?: string;
+  mockCaption?: string;
+  mockKeyframes?: string[];
+  scope?: any;
+  conversationHistory?: Array<{ role: string; content: string; timestamp?: string }>;
+  previousSources?: Array<any>;
+}
 
 // Seed / Live State Storage for full client-side responsiveness
 export class DiscoveryApiClient {
@@ -27,53 +45,69 @@ export class DiscoveryApiClient {
     return DiscoveryApiClient.instance;
   }
 
-  // 1. Discovery (Live Internet Search)
-  async searchGlobalDiscovery(keywords: string[], entityId?: string, scope?: any) {
+  // Master Unified Discovery & Intelligence Search
+  async searchUnifiedDiscovery(options: UnifiedSearchOptions) {
+    const targetLang = options.targetLanguage || 'en';
     try {
       const res = await fetch(`${API_BASE.discovery}/api/v1/discovery/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          keywords, 
-          entity_id: entityId, 
-          scope: scope || {},
-          max_candidates_per_source: 20,
-          auto_ingest: true
+        body: JSON.stringify({
+          query: options.query,
+          keywords: options.keywords || (options.query ? [options.query] : []),
+          entity_id: options.entityId,
+          input_modality: options.inputModality || 'text',
+          target_language: targetLang,
+          media_file_name: options.mediaFileName,
+          media_base64: options.mediaBase64,
+          media_mime_type: options.mediaMimeType,
+          mock_ocr_text: options.mockOcrText,
+          mock_transcript: options.mockTranscript,
+          mock_caption: options.mockCaption,
+          mock_keyframes: options.mockKeyframes,
+          scope: options.scope || {},
+          max_candidates_per_source: 15,
+          auto_ingest: true,
+          conversation_history: options.conversationHistory,
+          previous_sources: options.previousSources,
         }),
       });
       if (res.ok) {
-        const data = await res.json();
-        return {
-          query: keywords.join(' '),
-          total_candidates: data.candidates_count || data.candidates?.length || 0,
-          new_articles_ingested: data.candidates_count || 0,
-          duplicates_skipped: 0,
-          articles: (data.candidates || []).map((c: any, idx: number) => ({
-            id: `art-live-${idx + 1}`,
-            title: c.title,
-            source: c.source,
-            source_tier: c.source_tier || 2,
-            language: 'en',
-            canonical_url: c.url,
-            published_at: c.discovered_at || new Date().toISOString(),
-          }))
-        };
+        return await res.json();
+      } else {
+        const errText = await res.text();
+        throw new Error(`Live discovery service returned HTTP ${res.status}: ${errText}`);
       }
-    } catch (e) {
-      console.warn('Live internet discovery call returned, using cached state', e);
+    } catch (e: any) {
+      console.error('Unified discovery live service failure:', e);
+      throw new Error(e.message || 'Live discovery service failed to respond. Please ensure discovery backend is running on port 8004.');
     }
+  }
+
+  // 1. Discovery (Legacy adapter for candidate list)
+  async searchGlobalDiscovery(keywords: string[], entityId?: string, scope?: any) {
+    const res = await this.searchUnifiedDiscovery({
+      keywords,
+      entityId,
+      scope,
+    });
     return {
       query: keywords.join(' '),
-      total_candidates: 12,
-      new_articles_ingested: 8,
-      duplicates_skipped: 4,
-      articles: [
-        { id: 'art-disc-01', title: 'Applied Materials to invest $5B in India as Modi chip summit opens', source: 'reuters.com', source_tier: 1, language: 'en', canonical_url: 'https://reuters.com/business/chips' },
-        { id: 'art-disc-02', title: 'US House passes tariff bill affecting global energy supplies', source: 'bbc.com', source_tier: 1, language: 'en', canonical_url: 'https://bbc.com/news/world' },
-        { id: 'art-disc-03', title: 'Global AI semiconductor breakthrough announced by joint research consortium', source: 'thehindu.com', source_tier: 1, language: 'en', canonical_url: 'https://thehindu.com/tech' },
-      ]
+      total_candidates: res.candidates_count || 0,
+      new_articles_ingested: res.candidates_count || 0,
+      duplicates_skipped: 0,
+      articles: (res.sources || []).map((c: any, idx: number) => ({
+        id: `art-live-${idx + 1}`,
+        title: c.title,
+        source: c.source,
+        source_tier: c.source_tier || 2,
+        language: res.target_language || 'en',
+        canonical_url: c.url,
+        published_at: c.discovered_at || new Date().toISOString(),
+      }))
     };
   }
+
 
   // 2. Entities
   async listEntities(): Promise<Entity[]> {

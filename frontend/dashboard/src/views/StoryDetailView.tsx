@@ -54,7 +54,7 @@ According to company executives, the platform incorporates indigenous software t
       confidence: 0.92,
       sentiment: 'positive',
       reason: "Entity 'Tata Motors EV' is clearly mentioned in domain-relevant automotive commercial fleet context.",
-      validated_by: 'Contextual Validation Agent (LLM Disambiguation)',
+      validated_by: 'Contextual Validation & Semantic Disambiguation',
     },
   };
 
