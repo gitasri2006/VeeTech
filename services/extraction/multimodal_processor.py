@@ -90,7 +90,7 @@ class ImageProcessor:
                     "}"
                 )
                 
-                for model_name in ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                for model_name in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.6-flash"]:
                     try:
                         resp = client.models.generate_content(
                             model=model_name,
@@ -182,7 +182,7 @@ class AudioProcessor:
                     '  "search_query": "Concise search query for news"\n'
                     "}"
                 )
-                for model_name in ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                for model_name in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.6-flash"]:
                     try:
                         resp = client.models.generate_content(
                             model=model_name,
@@ -248,16 +248,16 @@ class VideoProcessor:
                     "2. Extract any on-screen lower-third text or graphics (OCR).\n"
                     "3. Describe the key visual scenes.\n"
                     "4. Provide a 3 to 6 word search query for live news articles.\n\n"
-                    "Return JSON strictly:\n"
+                    "Return strictly JSON:\n"
                     "{\n"
-                    '  "transcript": "Spoken transcript",\n'
+                    '  "transcript": "Audio narration text",\n'
                     '  "ocr_text": "On-screen text",\n'
-                    '  "keyframes": ["Scene 1", "Scene 2"],\n'
+                    '  "keyframes": ["Key scene 1", "Key scene 2"],\n'
                     '  "detected_topic": "Video topic",\n'
-                    '  "search_query": "Search query for news"\n'
+                    '  "search_query": "Concise search query for news"\n'
                     "}"
                 )
-                for model_name in ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                for model_name in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.6-flash"]:
                     try:
                         resp = client.models.generate_content(
                             model=model_name,
