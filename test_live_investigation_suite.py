@@ -5,6 +5,7 @@ Verifies real agent decisions, live source fan-out, evidence grounding, PostgreS
 """
 
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -85,7 +86,10 @@ TEST_QUERIES = [
 
 def check_postgres_record(request_id: str) -> bool:
     try:
-        conn = psycopg2.connect(host="localhost", port=5432, user="postgres", password="root123", dbname="discovery", connect_timeout=3)
+        from dotenv import load_dotenv
+        load_dotenv()
+        db_url = os.getenv("DATABASE_URL", "postgresql://postgres:Gayu%40300116@localhost:5432/discovery")
+        conn = psycopg2.connect(db_url, connect_timeout=3)
         cur = conn.cursor()
         cur.execute("SELECT request_id, total_steps FROM execution_traces WHERE request_id = %s;", (request_id,))
         row = cur.fetchone()
@@ -118,8 +122,9 @@ def run_suite():
         }
 
         data_bytes = json.dumps(payload).encode("utf-8")
+        url = os.getenv("DISCOVERY_API_URL", "http://localhost:8000/api/discovery/api/v1/discovery/search")
         req = urllib.request.Request(
-            "http://localhost:8004/api/discovery/search",
+            url,
             data=data_bytes,
             headers={"Content-Type": "application/json", "User-Agent": "ValidationSuite/3.0"}
         )

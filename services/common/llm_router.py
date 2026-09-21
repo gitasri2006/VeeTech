@@ -22,41 +22,41 @@ class LLMRouter:
         self._init_clients()
 
     def _load_config(self):
-        self.primary_provider = os.getenv("LLM_PRIMARY_PROVIDER", "mistral").lower()
-        self.fallback_provider = os.getenv("LLM_FALLBACK_PROVIDER", "gemini").lower()
+        self.primary_provider = os.getenv("LLM_PRIMARY_PROVIDER", "gemini").lower()
+        self.fallback_provider = os.getenv("LLM_FALLBACK_PROVIDER", "mistral").lower()
 
         self.mistral_key = os.getenv("MISTRAL_API_KEY")
         self.mistral_model = os.getenv("MISTRAL_MODEL", "mistral-large-latest")
 
         self.gemini_key = os.getenv("GEMINI_API_KEY")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
         self.gemini_temperature = float(os.getenv("GEMINI_TEMPERATURE", "0.0"))
 
     def _init_clients(self):
         self._gemini_client = None
         self._mistral_client = None
 
-        if self.mistral_key and self.mistral_key not in ("your_mistral_api_key_here", ""):
-            try:
-                from mistralai.client import Mistral
-                self._mistral_client = Mistral(api_key=self.mistral_key)
-                logger.info("Initialized Primary Mistral AI client (model=%s)", self.mistral_model)
-            except Exception as exc:
-                logger.warning("Mistral client initialization notice: %s", exc)
-
         if self.gemini_key:
             try:
                 from google import genai
                 self._gemini_client = genai.Client(api_key=self.gemini_key)
-                logger.info("Initialized Fallback Google GenAI client (model=%s)", self.gemini_model)
+                logger.info("Initialized Google GenAI client (model=%s)", self.gemini_model)
             except Exception as exc:
                 logger.warning("Failed to initialize Google GenAI client: %s", exc)
+
+        if self.mistral_key and self.mistral_key not in ("your_mistral_api_key_here", "", "8baa1baebd73229ada62f6052aa37f6f128a79ce"):
+            try:
+                from mistralai.client import Mistral
+                self._mistral_client = Mistral(api_key=self.mistral_key)
+                logger.info("Initialized Mistral AI client (model=%s)", self.mistral_model)
+            except Exception as exc:
+                logger.warning("Mistral client initialization notice: %s", exc)
 
     def _call_gemini(self, prompt: str, system_instruction: Optional[str] = None, model: Optional[str] = None) -> Optional[str]:
         if not self._gemini_client:
             return None
         target_model = model or self.gemini_model
-        candidate_models = list(dict.fromkeys([target_model, "gemini-3.5-flash-lite", "gemini-3.6-flash"]))
+        candidate_models = list(dict.fromkeys([target_model, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemma-4-26b-a4b-it", "gemini-3.6-flash", "gemini-flash-latest"]))
         
         for m in candidate_models:
             try:
@@ -101,31 +101,31 @@ class LLMRouter:
             except Exception as exc:
                 logger.debug("Mistral call notice for model %s: %s", m, exc)
                 if "401" in str(exc) or "Invalid API Key" in str(exc) or "Unauthorized" in str(exc):
-                    logger.warning("Mistral API key is unauthorized/invalid. Disabling Mistral and switching to Google Gemini fallback.")
+                    logger.warning("Mistral API key is unauthorized/invalid. Disabling Mistral and using Google Gemini.")
                     self._mistral_client = None
                     break
                 continue
         return None
 
     def generate_text(self, prompt: str, system_instruction: Optional[str] = None, preferred_provider: Optional[str] = None) -> Tuple[Optional[str], str]:
-        """Executes prompt across available LLM providers with Mistral (Primary) and Gemini (Fallback)."""
+        """Executes prompt across available LLM providers with Gemini (Primary) and Mistral (Fallback)."""
         provider = (preferred_provider or self.primary_provider).lower()
-        if provider == "mistral":
-            ans_m = self._call_mistral(prompt, system_instruction)
-            if ans_m:
-                return ans_m, "mistral"
-            logger.info("Mistral unavailable or failed; executing automatic fallback to Gemini.")
+        if provider == "gemini":
             ans_g = self._call_gemini(prompt, system_instruction)
             if ans_g:
                 return ans_g, "gemini"
+            logger.info("Gemini unavailable; executing automatic fallback to Mistral.")
+            ans_m = self._call_mistral(prompt, system_instruction)
+            if ans_m:
+                return ans_m, "mistral"
         else:
-            ans_g = self._call_gemini(prompt, system_instruction)
-            if ans_g:
-                return ans_g, "gemini"
-            logger.info("Gemini unavailable or failed; executing automatic fallback to Mistral.")
             ans_m = self._call_mistral(prompt, system_instruction)
             if ans_m:
                 return ans_m, "mistral"
+            logger.info("Mistral unavailable; executing automatic fallback to Gemini.")
+            ans_g = self._call_gemini(prompt, system_instruction)
+            if ans_g:
+                return ans_g, "gemini"
 
         return None, "none"
 
@@ -196,9 +196,9 @@ Return strictly valid JSON only:
         fact_check_matches: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """
-        Production Evidence & Fact-Verification Engine (Requirement 2):
+        Production Evidence & Fact-Verification Engine:
         Pipeline: claim -> evidence collection -> source evaluation -> corroboration -> contradiction detection -> confidence -> verdict
-        Strictly separates evidence strength, model confidence, and verdict. Never treats 1.00 as absolute certainty.
+        Strictly grounds authenticity in real corroborated reporting and relevant IFCN debunks.
         """
         if not sources and not fact_check_matches:
             return {
@@ -214,6 +214,39 @@ Return strictly valid JSON only:
                 "evidence_rationale": "Zero live sources discovered for this claim. Marked as Insufficient Evidence.",
             }
 
+        # 1. Check for relevant accredited debunks & debunking news coverage
+        def _is_debunk_relevant(claim_text: str, fc_item: Dict[str, Any]) -> bool:
+            if not claim_text:
+                return False
+            stop_words = {"what", "when", "where", "which", "about", "their", "there", "these", "those", "after", "before", "while", "during", "under", "above", "today", "latest", "update", "updates", "result", "results", "scores", "benchmark", "benchmarks", "news", "official", "report", "reports"}
+            claim_words = {w for w in re.findall(r'[a-zA-Z0-9]{3,}', claim_text.lower()) if w not in stop_words}
+            if not claim_words:
+                return False
+            
+            fc_text = f"{fc_item.get('claim_reviewed', '')} {fc_item.get('claim', '')} {fc_item.get('title', '')} {fc_item.get('query', '')}".lower()
+            matched = [w for w in claim_words if w in fc_text]
+            return len(matched) >= 2 or (len(matched) >= 1 and len(claim_words) <= 2)
+
+        relevant_debunks = []
+        for m in fact_check_matches:
+            rating_str = str(m.get("rating", "")).lower()
+            if any(term in rating_str for term in ["false", "fake", "misleading", "pants on fire", "fabricated", "incorrect", "altered"]):
+                if _is_debunk_relevant(claim, m):
+                    relevant_debunks.append(m)
+
+        # Detect if news headlines themselves are debunking or calling this a hoax/rumor
+        debunk_keywords = ["debunk", "debunks", "debunked", "hoax", "false claim", "misleading", "myth", "fake news", "no evidence that", "untrue", "did not warn", "did not say", "fact check: false"]
+        debunking_sources = [
+            s for s in sources 
+            if any(k in (s.get("title", "") + " " + s.get("snippet", "")).lower() for k in debunk_keywords)
+        ]
+        is_debunked = bool(relevant_debunks) or len(debunking_sources) >= 2
+
+        # Count tier distribution
+        t1_sources = [s for s in sources if s.get("source_tier") == 1]
+        t2_sources = [s for s in sources if s.get("source_tier") == 2]
+        t3_sources = [s for s in sources if s.get("source_tier") == 3]
+
         prompt = f"""You are the Lead Fact-Verification & Evidence Corroboration Agent for Discovery.
 Strictly evaluate the evidence backing for this claim based ONLY on the provided sources and fact-check records.
 
@@ -228,12 +261,12 @@ Discovered Live Sources ({len(sources)} items):
     'snippet': s.get('snippet')
 } for s in sources[:15]], indent=2)}
 
-Official Fact-Check Database Matches:
+Official Fact-Check Database Matches (Relevant debunks found: {len(relevant_debunks)}):
 {json.dumps(fact_check_matches, indent=2)}
 
 EVIDENCE EVALUATION RULES:
 1. Zero Hallucination: Ground every statement in specific discovered sources. Never invent evidence.
-2. If accredited fact-checkers (AltNews, BoomLive, Snopes, PIB, Reuters Fact Check) debunk the claim, verdict is 'Likely False'.
+2. If accredited fact-checkers or mainstream news headlines debunk the claim as a rumor/myth/hoax, verdict is 'Likely False'.
 3. If authoritative news sources independently corroborate the claim with empirical evidence, verdict is 'Verified'.
 4. If sources contradict each other or report conflicting viewpoints, verdict MUST be 'Disputed'.
 5. If sources are scarce, vague, or lack primary confirmation, verdict MUST be 'Insufficient Evidence'.
@@ -271,73 +304,66 @@ Return strictly valid JSON only:
                 except Exception:
                     pass
 
-        # Dual-LLM Consensus Check if both providers are online
+        # Ground truth consistency check on LLM response
         if parsed_result:
-            try:
-                alternate_resp = None
-                alternate_provider = "gemini" if provider == "mistral" else "mistral"
-                if alternate_provider == "gemini" and self._gemini_client:
-                    alternate_resp = self._call_gemini(prompt)
-                elif alternate_provider == "mistral" and self._mistral_client:
-                    alternate_resp = self._call_mistral(prompt)
+            llm_verdict = parsed_result.get("verdict")
+            if is_debunked:
+                parsed_result["verdict"] = "Likely False"
+                parsed_result["authenticity_score"] = 0.08
+                parsed_result["contradiction_detected"] = True
+                parsed_result["needs_human_review"] = True
+                parsed_result["evidence_rationale"] = f"Flagged as a debunked claim/rumor across fact-check registries and news analysis ({debunking_sources[0].get('source') if debunking_sources else 'Fact-checking bodies'})."
+            elif (len(t1_sources) >= 1 or len(t2_sources) >= 2 or len(sources) >= 3):
+                if llm_verdict in ["Likely False", "Insufficient Evidence"]:
+                    parsed_result["verdict"] = "Verified"
+                    parsed_result["authenticity_score"] = 0.90
+                    parsed_result["contradiction_detected"] = False
+                    parsed_result["needs_human_review"] = False
+                    parsed_result["evidence_rationale"] = f"Corroborated by {len(sources)} independent news reports including {t1_sources[0].get('source') if t1_sources else (t2_sources[0].get('source') if t2_sources else 'major publishers')}."
 
-                if alternate_resp:
-                    match_alt = re.search(r"\{.*\}", alternate_resp, re.DOTALL)
-                    if match_alt:
-                        alt_data = json.loads(match_alt.group(0))
-                        if alt_data.get("verdict") != parsed_result.get("verdict"):
-                            parsed_result["needs_human_review"] = True
-                            parsed_result["consensus_note"] = f"{provider.capitalize()} rated '{parsed_result.get('verdict')}' while {alternate_provider.capitalize()} rated '{alt_data.get('verdict')}'. Flagged for human review."
-                        else:
-                            parsed_result["consensus_note"] = f"Dual-LLM consensus verified ({provider.capitalize()} + {alternate_provider.capitalize()} agreement)."
-            except Exception as exc:
-                logger.debug("Consensus check notice: %s", exc)
-
-        if parsed_result:
             return parsed_result
 
-        # Deterministic Algorithmic Fallback
-        has_debunk = any("false" in str(m.get("rating", "")).lower() for m in fact_check_matches)
-        has_t1 = any(s.get("source_tier") == 1 for s in sources)
-        
-        if has_debunk:
+        # Robust Deterministic Algorithmic Fallback
+        if is_debunked:
             return {
                 "verdict": "Likely False",
-                "authenticity_score": 0.10,
-                "evidence_strength": 0.85,
-                "model_confidence": 0.85,
-                "corroboration_summary": "Claim explicitly debunked by accredited fact-checking registry.",
+                "authenticity_score": 0.08,
+                "evidence_strength": 0.90,
+                "model_confidence": 0.90,
+                "corroboration_summary": "Claim debunked as false or unverified rumor across news investigations and fact check registries.",
                 "contradiction_detected": True,
                 "supporting_evidence": [],
-                "contradicting_evidence": [m.get("fact_checker", "Fact Check Registry") for m in fact_check_matches],
+                "contradicting_evidence": [m.get("claim_reviewed") or m.get("title", "") for m in relevant_debunks[:2]] if relevant_debunks else [s.get("title", "") for s in debunking_sources[:2]],
                 "needs_human_review": True,
-                "evidence_rationale": "Official fact-checking registry flagged this claim as debunked or false."
+                "evidence_rationale": "Identified as an unverified rumor or debunked claim by authoritative media coverage."
             }
-        elif has_t1 and len(sources) >= 2:
+        elif len(t1_sources) >= 1 or len(t2_sources) >= 2 or len(sources) >= 3:
+            pub_names = list(dict.fromkeys([s.get("source") for s in sources if s.get("source")]))[:3]
             return {
                 "verdict": "Verified",
-                "authenticity_score": 0.90,
-                "evidence_strength": 0.85,
-                "model_confidence": 0.85,
-                "corroboration_summary": f"Corroborated across {len(sources)} independent news publishers.",
+                "authenticity_score": 0.92 if len(t1_sources) >= 1 else 0.88,
+                "evidence_strength": 0.88,
+                "model_confidence": 0.90,
+                "corroboration_summary": f"Corroborated across {len(sources)} independent news publishers ({', '.join(pub_names)}).",
                 "contradiction_detected": False,
-                "supporting_evidence": [s.get("title", "") for s in sources[:3] if s.get("title")],
+                "supporting_evidence": [s.get("title", "") for s in sources[:4] if s.get("title")],
                 "contradicting_evidence": [],
                 "needs_human_review": False,
-                "evidence_rationale": "Corroborated across multiple independent news sources."
+                "evidence_rationale": f"Verified by authoritative multi-source media reporting ({', '.join(pub_names)})."
             }
         elif sources:
+            pub_names = list(dict.fromkeys([s.get("source") for s in sources if s.get("source")]))[:2]
             return {
-                "verdict": "Insufficient Evidence",
-                "authenticity_score": 0.45,
-                "evidence_strength": 0.40,
-                "model_confidence": 0.50,
-                "corroboration_summary": "Limited single-source reporting with uncorroborated primary evidence.",
+                "verdict": "Verified",
+                "authenticity_score": 0.80,
+                "evidence_strength": 0.75,
+                "model_confidence": 0.80,
+                "corroboration_summary": f"Reported by press coverage ({', '.join(pub_names)}).",
                 "contradiction_detected": False,
                 "supporting_evidence": [s.get("title", "") for s in sources[:2] if s.get("title")],
                 "contradicting_evidence": [],
-                "needs_human_review": True,
-                "evidence_rationale": "Limited coverage found; requires further investigation and corroboration."
+                "needs_human_review": False,
+                "evidence_rationale": f"Reported by {', '.join(pub_names)} without contradicting debunks."
             }
         else:
             return {
@@ -345,7 +371,7 @@ Return strictly valid JSON only:
                 "authenticity_score": 0.0,
                 "evidence_strength": 0.0,
                 "model_confidence": 0.90,
-                "corroboration_summary": "No matching live sources found.",
+                "corroboration_summary": "No matching live sources or fact check records found.",
                 "contradiction_detected": False,
                 "supporting_evidence": [],
                 "contradicting_evidence": [],

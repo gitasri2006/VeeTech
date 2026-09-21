@@ -149,8 +149,9 @@ def execute_suite():
             "auto_ingest": True,
         }
 
+        url = os.getenv("DISCOVERY_API_URL", "http://localhost:8000/api/discovery/api/v1/discovery/search")
         req = urllib.request.Request(
-            "http://localhost:8004/api/discovery/search",
+            url,
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json", "User-Agent": "DiscoveryValidator/3.0"}
         )
