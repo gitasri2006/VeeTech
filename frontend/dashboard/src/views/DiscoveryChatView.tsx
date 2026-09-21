@@ -802,9 +802,13 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                               <span>Supporting Evidence (Tier 1 & Tier 2)</span>
                             </div>
                             <ul className="space-y-1.5 text-xs text-slate-700">
-                              {crossAnalysis.supporting_evidence?.map((ev: string, i: number) => (
-                                <li key={i}>• {ev}</li>
-                              )) || <li>• Independent wire and press reports corroborate the core developments.</li>}
+                              {crossAnalysis.supporting_evidence && crossAnalysis.supporting_evidence.filter(Boolean).length > 0 ? (
+                                crossAnalysis.supporting_evidence.filter(Boolean).map((ev: string, i: number) => (
+                                  <li key={i}>• {ev}</li>
+                                ))
+                              ) : (
+                                <li className="text-slate-500 italic">• Independent wire and press reports corroborate the core developments.</li>
+                              )}
                             </ul>
                           </div>
 
@@ -815,9 +819,13 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                               <span>Contradicting / Unconfirmed Elements</span>
                             </div>
                             <ul className="space-y-1.5 text-xs text-slate-700">
-                              {crossAnalysis.contradicting_or_uncertain_evidence?.map((ev: string, i: number) => (
-                                <li key={i}>• {ev}</li>
-                              )) || <li>• No major conflicting claims detected across indexed verified registries.</li>}
+                              {crossAnalysis.contradicting_or_uncertain_evidence && crossAnalysis.contradicting_or_uncertain_evidence.filter(Boolean).length > 0 ? (
+                                crossAnalysis.contradicting_or_uncertain_evidence.filter(Boolean).map((ev: string, i: number) => (
+                                  <li key={i}>• {ev}</li>
+                                ))
+                              ) : (
+                                <li className="text-slate-500 italic">• No contradictory claims or unconfirmed elements detected across verified sources.</li>
+                              )}
                             </ul>
                           </div>
                         </div>
