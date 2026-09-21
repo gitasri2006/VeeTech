@@ -16,6 +16,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import hashlib
+import html
 import json
 import logging
 import os
@@ -141,6 +142,7 @@ class UnifiedSearchResponse(BaseModel):
     job_id: str
     status: str
     query: str
+    corrected_query: Optional[str] = None
     input_modality: str
     target_language: str
     language_name: str
@@ -533,10 +535,94 @@ class YouTubeLiveDiscoveryAdapter(DiscoveryAdapter):
         return results[:limit]
 
 
-# ACTIVE ADAPTERS: Verified high-quality active sources (Wikipedia Tier 1, Google News Live, HackerNews, YouTube)
+class DuckDuckGoWebNewsDiscoveryAdapter(DiscoveryAdapter):
+    """
+    Live Web & Breaking News Discovery Adapter querying live web search with fuzzy resilience and redirect unwrapping.
+    Captures live breaking events, regional press, celebrity news, government notices, social broadcasts, and international headlines.
+    """
+    name: str = "web_news_live"
+
+    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 15, target_language: str = "en") -> List[Dict[str, Any]]:
+        results = []
+        loop = asyncio.get_event_loop()
+
+        for q in queries:
+            if not q or len(q.strip()) < 2:
+                continue
+            try:
+                def _do_fetch(search_term: str):
+                    data = urllib.parse.urlencode({"q": search_term}).encode("utf-8")
+                    req = urllib.request.Request(
+                        "https://lite.duckduckgo.com/lite/",
+                        data=data,
+                        headers={
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        }
+                    )
+                    items = []
+                    with urllib.request.urlopen(req, timeout=6) as resp:
+                        raw_html = resp.read().decode("utf-8", errors="ignore")
+                        link_pattern = re.compile(r'<a[^>]*class=[\'"]result-link[\'"][^>]*href=[\'"](.*?)[\'"][^>]*>(.*?)</a>', re.DOTALL | re.IGNORECASE)
+                        link_pattern_alt = re.compile(r'<a[^>]*href=[\'"](.*?)[\'"][^>]*class=[\'"]result-link[\'"][^>]*>(.*?)</a>', re.DOTALL | re.IGNORECASE)
+                        
+                        raw_links = link_pattern.findall(raw_html) or link_pattern_alt.findall(raw_html)
+                        raw_snippets = re.findall(r'<td[^>]*class=[\'"]result-snippet[\'"][^>]*>(.*?)</td>', raw_html, re.DOTALL | re.IGNORECASE)
+                        
+                        for i, (u, t) in enumerate(raw_links[:10]):
+                            clean_t = re.sub(r'<[^>]+>', '', t).strip()
+                            clean_t = html.unescape(clean_t)
+                            clean_s = ""
+                            if i < len(raw_snippets):
+                                clean_s = re.sub(r'<[^>]+>', ' ', raw_snippets[i]).strip()
+                                clean_s = html.unescape(re.sub(r'\s+', ' ', clean_s))
+                            
+                            actual_url = u
+                            if "duckduckgo.com/l/?uddg=" in actual_url:
+                                parsed_q = urllib.parse.parse_qs(urllib.parse.urlparse(actual_url).query)
+                                if "uddg" in parsed_q:
+                                    actual_url = parsed_q["uddg"][0]
+                            
+                            domain = _extract_domain(actual_url)
+                            source_name = domain.title() if domain else "Live Web News"
+                            if "instagram.com" in domain:
+                                source_name = "Instagram Public Broadcast"
+                            elif "facebook.com" in domain:
+                                source_name = "Facebook Press / Public Post"
+                            elif "youtube.com" in domain:
+                                source_name = "YouTube Video Report"
+                            
+                            tier_info = classify_source_tier(domain or source_name, "web")
+                            items.append({
+                                "url": actual_url,
+                                "title": clean_t,
+                                "source": source_name,
+                                "domain": domain,
+                                "platform": "web" if "youtube.com" not in domain else "youtube",
+                                "discovered_at": datetime.now(timezone.utc).isoformat(),
+                                "adapter": "web_news_live",
+                                "source_tier": tier_info["tier"],
+                                "tier_label": tier_info["tier_label"],
+                                "credibility_score": tier_info["credibility_score"],
+                                "tier_description": tier_info["tier_description"],
+                                "snippet": clean_s or f"Live coverage and news report regarding {clean_t}.",
+                                "published_at_raw": datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
+                            })
+                    return items
+
+                items = await loop.run_in_executor(None, lambda: _do_fetch(q))
+                results.extend(items)
+            except Exception as e:
+                logger.debug("Web News Live search notice for '%s': %s", q, e)
+                
+        return results[:limit]
+
+
+# ACTIVE ADAPTERS: Multi-angle high-quality live adapters (DuckDuckGo Web/News, Google News Live, Wikipedia Tier 1, HackerNews, YouTube)
 active_adapters: List[DiscoveryAdapter] = [
-    WikipediaKnowledgeAdapter(),
+    DuckDuckGoWebNewsDiscoveryAdapter(),
     GoogleNewsLiveDiscoveryAdapter(),
+    WikipediaKnowledgeAdapter(),
     HackerNewsDiscoveryAdapter(),
     YouTubeLiveDiscoveryAdapter(),
 ]
@@ -736,13 +822,31 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
     if not search_query:
         search_query = "Global Market and Technology Intelligence"
 
-    # 2. Query Expansion
-    entity = db.get_entity(request.entity_id) if request.entity_id else None
-    expanded_queries = expand_queries([search_query], entity)
-    logger.info("Executing unified discovery for: '%s' (modality=%s, lang=%s)", search_query, modality, request.target_language)
+    # 2. Typo Autocorrect, Entity Resolution & Multi-Angle Query Expansion
+    reformulation = {}
+    try:
+        reformulation = await asyncio.wait_for(
+            loop.run_in_executor(None, lambda: gemini_client.reformulate_and_extract_search_intent(search_query)),
+            timeout=4.0
+        )
+    except Exception as ref_err:
+        logger.debug("Reformulation exception: %s", ref_err)
 
-    # 3. Parallel Multi-Source Fan-Out (Active Adapters)
-    targeted_queries = expanded_queries[:2] if len(expanded_queries) > 2 else expanded_queries
+    corrected_q = (reformulation.get("corrected_query") if reformulation else None) or search_query
+    intent_keywords = (reformulation.get("search_keywords") if reformulation else []) or []
+    
+    query_candidates_for_search = list(dict.fromkeys([
+        corrected_q,
+        search_query,
+        *intent_keywords
+    ]))
+
+    entity = db.get_entity(request.entity_id) if request.entity_id else None
+    expanded_queries = expand_queries(query_candidates_for_search, entity)
+    logger.info("Executing unified discovery for: '%s' (corrected: '%s', modality=%s, lang=%s)", search_query, corrected_q, modality, request.target_language)
+
+    # 3. Parallel Multi-Source Fan-Out (Active Adapters: Web News Live, Google News, Wikipedia, HackerNews, YouTube)
+    targeted_queries = expanded_queries[:4] if len(expanded_queries) > 4 else expanded_queries
     tasks = [
         adapter.search(
             targeted_queries,
@@ -805,10 +909,11 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
         })
 
     # 5. Query Fact Check Database asynchronously with timeout
+    effective_query = corrected_q or search_query
     loop = asyncio.get_event_loop()
     try:
         fact_check_matches = await asyncio.wait_for(
-            loop.run_in_executor(None, lambda: query_google_factcheck_api(search_query)),
+            loop.run_in_executor(None, lambda: query_google_factcheck_api(effective_query)),
             timeout=2.5
         )
     except Exception:
@@ -825,7 +930,7 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
             loop.run_in_executor(
                 None,
                 lambda: gemini_client.synthesize_discovery_intelligence(
-                    query=search_query,
+                    query=effective_query,
                     input_modality=modality,
                     discovered_articles=unique_candidates,
                     fact_check_matches=fact_check_matches,
@@ -837,12 +942,12 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
                     use_gemini=True,
                 )
             ),
-            timeout=12.0
+            timeout=14.0
         )
     except Exception as synth_exc:
         logger.debug("Async synthesis fallback: %s", synth_exc)
         intelligence_dict = gemini_client.synthesize_discovery_intelligence(
-            query=search_query,
+            query=effective_query,
             input_modality=modality,
             discovered_articles=unique_candidates,
             fact_check_matches=fact_check_matches,
@@ -901,6 +1006,7 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
         "job_id": job_id,
         "status": "completed",
         "query": search_query,
+        "corrected_query": corrected_q if corrected_q and corrected_q.lower().strip() != search_query.lower().strip() else None,
         "input_modality": modality,
         "target_language": target_lang,
         "language_name": lang_name,
