@@ -1,6 +1,6 @@
-# VeriScope Entity Profile Agent
+# Discovery Entity Profile Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.4** and **TRD Section 5.4**.
 
 ## Capabilities

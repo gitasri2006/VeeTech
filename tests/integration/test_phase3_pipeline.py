@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 3 Pipeline
+Integration Tests for Discovery Phase 3 Pipeline
 Tests: Social Media Ingestion (Instagram, X, YouTube) and Multimodal Ingestion (Image, Audio, Video)
 Verifies: Normalized Article + MediaAsset + SocialPost persistence and Event Bus publishing
 """
@@ -72,7 +72,7 @@ def test_multimodal_image_ingestion_endpoint():
     """Verify POST /extract/multimodal for Image creates Article + MediaAsset with OCR."""
     payload = {
         "media_type": "image",
-        "storage_ref": "gs://veriscope-assets/infographic_01.png",
+        "storage_ref": "gs://discovery-assets/infographic_01.png",
         "title": "Quarterly Financial Overview Infographic",
         "source_name": "analyst_upload",
         "mock_ocr_text": "Net Revenue: $4.2B (+24% YoY). Operating Margin: 28%.",
@@ -104,7 +104,7 @@ def test_multimodal_video_ingestion_endpoint():
     """Verify POST /extract/multimodal for Video creates Article + MediaAsset with transcript & keyframes."""
     payload = {
         "media_type": "video",
-        "storage_ref": "gs://veriscope-assets/press_conf.mp4",
+        "storage_ref": "gs://discovery-assets/press_conf.mp4",
         "title": "Autonomous Vehicle Safety Briefing",
         "mock_transcript": "Our latest safety benchmarks indicate a 99.99% obstacle avoidance reliability rating in heavy rain.",
         "mock_ocr_text": "Slide 4: LiDAR and Radar Sensor Fusion",
@@ -131,7 +131,7 @@ def test_multimodal_audio_ingestion_endpoint():
     """Verify POST /extract/multimodal for Audio creates Article + MediaAsset with transcript."""
     payload = {
         "media_type": "audio",
-        "storage_ref": "gs://veriscope-assets/earnings_call.mp3",
+        "storage_ref": "gs://discovery-assets/earnings_call.mp3",
         "title": "Q3 2026 Earnings Call Recording",
         "mock_transcript": "We experienced accelerating enterprise demand for our automated fact verification APIs across Asia Pacific.",
     }

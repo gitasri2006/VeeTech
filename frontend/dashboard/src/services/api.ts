@@ -22,6 +22,8 @@ export interface UnifiedSearchOptions {
   entityId?: string;
   inputModality?: 'text' | 'image' | 'audio' | 'video';
   targetLanguage?: string;
+  timeRange?: string;
+  strictRelevance?: boolean;
   mediaFileName?: string;
   mediaBase64?: string;
   mediaMimeType?: string;
@@ -58,6 +60,8 @@ export class DiscoveryApiClient {
           entity_id: options.entityId,
           input_modality: options.inputModality || 'text',
           target_language: targetLang,
+          time_range: options.timeRange || 'all',
+          strict_relevance: options.strictRelevance !== false,
           media_file_name: options.mediaFileName,
           media_base64: options.mediaBase64,
           media_mime_type: options.mediaMimeType,
@@ -153,6 +157,35 @@ export class DiscoveryApiClient {
   }
 
   // 3. Rules
+  async listRules(entityId?: string): Promise<Rule[]> {
+    try {
+      const url = entityId ? `${API_BASE.filtering}/rules?entity_id=${entityId}` : `${API_BASE.filtering}/rules`;
+      const res = await fetch(url);
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return [];
+  }
+
+  async createRule(payload: Partial<Rule>): Promise<Rule> {
+    const res = await fetch(`${API_BASE.filtering}/rules`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  }
+
+  async deleteRule(ruleId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE.filtering}/rules/${ruleId}`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
   async compileRule(entityId: string, naturalLanguage: string): Promise<Rule> {
     const res = await fetch(`${API_BASE.filtering}/rules/compile`, {
       method: 'POST',

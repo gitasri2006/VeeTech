@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: veriscope-agent-deployments
-  namespace: veriscope
+  name: discovery-agent-deployments
+  namespace: discovery
   labels:
-    app.kubernetes.io/name: veriscope
-    app.kubernetes.io/part-of: veriscope-platform
+    app.kubernetes.io/name: discovery
+    app.kubernetes.io/part-of: discovery-platform
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: veriscope-core
+      app: discovery-core
   template:
     metadata:
       labels:
-        app: veriscope-core
+        app: discovery-core
     spec:
       containers:
         - name: extraction-service
-          image: gcr.io/veriscope-prod/extraction:v1.0.0
+          image: gcr.io/discovery-prod/extraction:v1.0.0
           ports:
             - containerPort: 8000
           resources:
@@ -30,9 +30,9 @@ spec:
               memory: "2Gi"
           envFrom:
             - secretRef:
-                name: veriscope-secrets
+                name: discovery-secrets
             - configMapRef:
-                name: veriscope-config
+                name: discovery-config
           readinessProbe:
             httpGet:
               path: /health
@@ -44,12 +44,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: veriscope-gateway-svc
-  namespace: veriscope
+  name: discovery-gateway-svc
+  namespace: discovery
 spec:
   type: ClusterIP
   selector:
-    app: veriscope-core
+    app: discovery-core
   ports:
     - name: extraction
       port: 8000
@@ -86,13 +86,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: veriscope-agents-hpa
-  namespace: veriscope
+  name: discovery-agents-hpa
+  namespace: discovery
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: veriscope-agent-deployments
+    name: discovery-agent-deployments
   minReplicas: 3
   maxReplicas: 25
   metrics:

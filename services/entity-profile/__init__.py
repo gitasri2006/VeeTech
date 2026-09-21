@@ -1,2 +1,2 @@
-"""VeriScope Entity Profile Agent Package"""
+"""Discovery Entity Profile Agent Package"""
 from .main import app

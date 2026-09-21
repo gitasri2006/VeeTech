@@ -1,5 +1,5 @@
 """
-VeriScope Official API Connectors & Live Authentication Test Suite
+Discovery Official API Connectors & Live Authentication Test Suite
 Tests live connectivity, rate limits, error handling, and graceful skipping when keys are not configured.
 """
 import os
@@ -43,7 +43,7 @@ def test_google_factcheck():
     try:
         query = urllib.parse.quote("climate change")
         url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={query}&key={api_key}"
-        req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             claims_count = len(data.get("claims", []))
@@ -58,7 +58,7 @@ def test_x_twitter():
         return
     try:
         url = "https://api.twitter.com/2/tweets/sample/stream/rules"
-        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {bearer_token}", "User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {bearer_token}", "User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             print_result("3. X (Twitter) API v2", "PASS", f"Successfully authenticated to X API v2 (HTTP {resp.status})")
@@ -79,7 +79,7 @@ def test_reddit():
         req = urllib.request.Request(
             "https://www.reddit.com/api/v1/access_token",
             data=data,
-            headers={"Authorization": f"Basic {auth}", "User-Agent": os.getenv("REDDIT_USER_AGENT", "VeriScope/1.0")}
+            headers={"Authorization": f"Basic {auth}", "User-Agent": os.getenv("REDDIT_USER_AGENT", "Discovery/1.0")}
         )
         with urllib.request.urlopen(req, timeout=6) as resp:
             token_data = json.loads(resp.read().decode())
@@ -97,7 +97,7 @@ def test_youtube():
         return
     try:
         url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q=technology+news&maxResults=2&key={api_key}"
-        req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             items = data.get("items", [])
@@ -108,12 +108,12 @@ def test_youtube():
 
 def test_meta_facebook_instagram():
     access_token = os.getenv("META_PAGE_ACCESS_TOKEN") or os.getenv("META_APP_SECRET")
-    if not access_token or access_token.startswith("your_") or access_token == "veriscope_meta_app_secret_test":
+    if not access_token or access_token.startswith("your_") or access_token == "discovery_meta_app_secret_test":
         print_result("6. Meta (Facebook & Instagram) Graph API", "SKIP (No token in .env)", "META_PAGE_ACCESS_TOKEN not configured", "Generate Page/User token on https://developers.facebook.com/ and set in .env")
         return
     try:
         url = f"https://graph.facebook.com/v19.0/me?access_token={access_token}"
-        req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             print_result("6. Meta Graph API", "PASS", f"Authenticated user/app ID: {data.get('id')}")
@@ -127,7 +127,7 @@ def test_telegram():
         return
     try:
         url = f"https://api.telegram.org/bot{bot_token}/getMe"
-        req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             if data.get("ok"):
@@ -145,7 +145,7 @@ def test_whatsapp_cloud():
         return
     try:
         url = f"https://graph.facebook.com/v19.0/{phone_id}?access_token={token}"
-        req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode())
             print_result("8. WhatsApp Cloud API", "PASS", f"Connected to WhatsApp Business Account ID: {data.get('id')}, Name: {data.get('verified_name', 'Verified')}")
@@ -154,7 +154,7 @@ def test_whatsapp_cloud():
 
 def main():
     print("=================================================================")
-    print("      VERISCOPE OFFICIAL APIS & CONNECTORS AUDIT & TEST          ")
+    print("      DISCOVERY OFFICIAL APIS & CONNECTORS AUDIT & TEST          ")
     print("=================================================================")
     test_gemini()
     test_google_factcheck()

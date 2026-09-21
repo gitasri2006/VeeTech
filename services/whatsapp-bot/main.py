@@ -1,5 +1,5 @@
 """
-VeriScope Public Verification Bot Agent (WhatsApp)
+Discovery Public Verification Bot Agent (WhatsApp)
 Compliant with PRD Section 7.10, Section 8.6, and TRD Section 5.10 (Pipeline B)
 
 Features:
@@ -42,15 +42,15 @@ def _get_fact_checker():
     return get_fact_checking_service()
 
 app = FastAPI(
-    title="VeriScope Public WhatsApp Verification Bot",
+    title="Discovery Public WhatsApp Verification Bot",
     version="1.0.0",
     description="Public-facing WhatsApp Bot for automated multimodal content authenticity verification (Pipeline B)."
 )
 
 # Configuration & Secrets
-SALT = os.getenv("WHATSAPP_PHONE_SALT", "veriscope_public_salt_2026_secure")
-META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "veriscope_meta_verify_token_2026")
-META_APP_SECRET = os.getenv("META_APP_SECRET", "veriscope_meta_app_secret_test")
+SALT = os.getenv("WHATSAPP_PHONE_SALT", "discovery_public_salt_2026_secure")
+META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "discovery_meta_verify_token_2026")
+META_APP_SECRET = os.getenv("META_APP_SECRET", "discovery_meta_app_secret_test")
 RATE_LIMIT_MAX_REQUESTS = int(os.getenv("WHATSAPP_RATE_LIMIT_MAX", "10"))
 RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("WHATSAPP_RATE_LIMIT_WINDOW", "60"))
 
@@ -150,13 +150,13 @@ def format_whatsapp_reply(
 ) -> str:
     """Formats a user-friendly, plain-language WhatsApp verification reply."""
     verdict_headers = {
-        FactCheckVerdict.VERIFIED: "✅ *VeriScope Verdict: VERIFIED*",
-        FactCheckVerdict.UNVERIFIED: "ℹ️ *VeriScope Verdict: UNVERIFIED*",
-        FactCheckVerdict.DISPUTED: "⚠️ *VeriScope Verdict: DISPUTED*",
-        FactCheckVerdict.LIKELY_FALSE: "❌ *VeriScope Verdict: MISINFORMATION / LIKELY FALSE*",
+        FactCheckVerdict.VERIFIED: "✅ *Discovery Verdict: VERIFIED*",
+        FactCheckVerdict.UNVERIFIED: "ℹ️ *Discovery Verdict: UNVERIFIED*",
+        FactCheckVerdict.DISPUTED: "⚠️ *Discovery Verdict: DISPUTED*",
+        FactCheckVerdict.LIKELY_FALSE: "❌ *Discovery Verdict: MISINFORMATION / LIKELY FALSE*",
     }
     
-    header = verdict_headers.get(verdict, "ℹ️ *VeriScope Verification Report*")
+    header = verdict_headers.get(verdict, "ℹ️ *Discovery Verification Report*")
     
     parts = [header, "", explanation]
     
@@ -165,14 +165,14 @@ def format_whatsapp_reply(
         for u in evidence_urls[:3]:
             parts.append(f"• {u}")
             
-    parts.append("\n_VeriScope Public Truth Bot — Always verify before you share._")
+    parts.append("\n_Discovery Public Truth Bot — Always verify before you share._")
     return "\n".join(parts)
 
 
 def get_consent_request_message() -> str:
     """Generates the initial one-time privacy consent notice."""
     return (
-        "🛡️ *Welcome to VeriScope Public Verification Bot!*\n\n"
+        "🛡️ *Welcome to Discovery Public Verification Bot!*\n\n"
         "Send us any suspicious text, image, audio clip, or video to check its authenticity.\n\n"
         "*Privacy Notice:* We store only the submitted claim/media and the verification verdict to prevent misinformation spreading. "
         "Your phone number is cryptographically salted and hashed; we never store your raw phone number or personal identity.\n\n"
@@ -183,7 +183,7 @@ def get_consent_request_message() -> str:
 def get_interim_review_message() -> str:
     """Interim acknowledgment message for items needing analyst review."""
     return (
-        "⏳ *VeriScope Verification In Progress*\n\n"
+        "⏳ *Discovery Verification In Progress*\n\n"
         "Our automated signals detected conflicting or sensitive claims. To ensure strict accuracy, "
         "your submission has been forwarded to our Fact-Verification Analyst team.\n\n"
         "You will receive the final verified verdict with evidence sources as soon as human review is complete."

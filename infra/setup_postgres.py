@@ -2,6 +2,19 @@ import os
 import subprocess
 import sys
 
+def load_env():
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dotenv_path = os.path.join(repo_root, ".env")
+    if os.path.exists(dotenv_path):
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
+load_env()
+
 def run_psql(args, dbname=None):
     psql_path = "C:/Program Files/PostgreSQL/18/bin/psql.exe"
     if not os.path.exists(psql_path):
@@ -12,14 +25,19 @@ def run_psql(args, dbname=None):
         else:
             raise FileNotFoundError("psql.exe not found in C:/Program Files/PostgreSQL")
 
+    user = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "root123")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+
     env = os.environ.copy()
-    env["PGPASSWORD"] = "Gayu@300116"
+    env["PGPASSWORD"] = password
 
     cmd = [
         psql_path,
-        "-U", "postgres",
-        "-h", "localhost",
-        "-p", "5432",
+        "-U", user,
+        "-h", host,
+        "-p", port,
     ]
     if dbname:
         cmd.extend(["-d", dbname])

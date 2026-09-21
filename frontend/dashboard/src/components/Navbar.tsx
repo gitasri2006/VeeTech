@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, RefreshCw, Sliders, MessageSquare, LogOut, User as UserIcon } from 'lucide-react';
+import { Compass, RefreshCw, Sliders, MessageSquare, LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface NavbarProps {
@@ -12,6 +12,7 @@ interface NavbarProps {
   onRefresh: () => void;
   showAdminSidebar?: boolean;
   onToggleAdminSidebar?: () => void;
+  onOpenSettings?: () => void;
   onResetToChat?: () => void;
   onLogout?: () => void;
 }
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onRefresh,
   showAdminSidebar,
   onToggleAdminSidebar,
+  onOpenSettings,
   onResetToChat,
   onLogout,
 }) => {
@@ -87,6 +89,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Discovery Chat</span>
         </button>
 
+        {/* Direct Settings & User Rules Button */}
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition shadow"
+            title="Open User Profile & Custom Rules Engine"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Settings & Rules</span>
+          </button>
+        )}
+
         {/* Optional Admin Console Toggle */}
         {onToggleAdminSidebar && (
           <button
@@ -96,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-blue-600/20 border-blue-500 text-blue-400'
                 : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:text-slate-200'
             }`}
-            title="Toggle Internal Diagnostics & System Telemetry Modules"
+            title="Toggle Internal Diagnostics & Navigation Sidebar"
           >
             <Sliders className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Internal Console</span>
@@ -105,7 +119,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* User Account Info Chip */}
         {currentUser && (
-          <div className="flex items-center space-x-2.5 bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5">
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center space-x-2.5 bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl px-3 py-1.5 transition text-left cursor-pointer"
+            title="Open Account Settings"
+          >
             <div className="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center font-bold text-[11px] text-emerald-400">
               {getInitials(currentUser.name, currentUser.email)}
             </div>
@@ -119,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
             </div>
-          </div>
+          </button>
         )}
 
         {/* Refresh Button */}

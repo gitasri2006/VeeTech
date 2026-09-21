@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 4 Multilingual Pipeline
+Integration Tests for Discovery Phase 4 Multilingual Pipeline
 Tests: Ingest Non-English Article -> Multilingual Tagging & Translation -> Filtering Match against English Entity Profile
 """
 

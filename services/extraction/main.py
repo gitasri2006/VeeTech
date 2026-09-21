@@ -1,5 +1,5 @@
 """
-VeriScope Extraction Service (Phase 0 & Phase 3 Multi-Platform, Multimodal)
+Discovery Extraction Service (Phase 0 & Phase 3 Multi-Platform, Multimodal)
 Compliant with PRD Section 7.2, 8.2, 8.3 and TRD Section 5.2
 
 Capabilities:
@@ -41,11 +41,11 @@ from services.extraction.multimodal_processor import (
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.extraction")
+logger = logging.getLogger("discovery.extraction")
 
 app = FastAPI(
-    title="VeriScope Multi-Platform & Multimodal Extraction Service",
-    description="Unified Web, Social, and Multimodal Extraction Service for VeriScope",
+    title="Discovery Multi-Platform & Multimodal Extraction Service",
+    description="Unified Web, Social, and Multimodal Extraction Service for Discovery",
     version="1.0.0",
 )
 
@@ -238,6 +238,12 @@ def extract_static_html(html_content: str, url: str = "") -> Dict[str, Any]:
     }
 
 
+try:
+    from services.extraction.playwright_scraper import playwright_scraper
+except ImportError:
+    import importlib
+    playwright_scraper = importlib.import_module("services.extraction.playwright_scraper").playwright_scraper
+
 _browser_fallback_runner: Optional[Callable[[str], str]] = None
 
 
@@ -255,15 +261,20 @@ def should_use_browser_fallback(html_content: str, text_content: str) -> bool:
     return False
 
 
-def execute_browser_fallback(url: str, raw_html: str) -> Dict[str, Any]:
-    global _browser_fallback_runner
-    logger.info("Executing browser fallback for: %s", url)
-    if _browser_fallback_runner:
-        try:
-            rendered = _browser_fallback_runner(url)
-            return extract_static_html(rendered, url)
-        except Exception as e:
-            logger.warning("Browser fallback failed (%s)", e)
+async def execute_browser_fallback_async(url: str, raw_html: str) -> Dict[str, Any]:
+    logger.info("Executing Playwright headless browser fallback for: %s", url)
+    try:
+        pw_result = await playwright_scraper.extract_page(url)
+        if pw_result.get("extracted_text"):
+            return {
+                "title": pw_result.get("title") or "",
+                "author": pw_result.get("author"),
+                "published_at": datetime.now(timezone.utc),
+                "source": extract_domain(url),
+                "extracted_text": pw_result.get("extracted_text", ""),
+            }
+    except Exception as e:
+        logger.warning("Playwright dynamic fallback notice (%s)", e)
     return extract_static_html(raw_html, url)
 
 
@@ -380,7 +391,7 @@ async def ingest_article(
     source_tier = resolve_source_tier(domain, explicit_tier)
 
     article = Article(
-        canonical_url=canonical_url or f"urn:veriscope:hash:{content_hash}",
+        canonical_url=canonical_url or f"urn:discovery:hash:{content_hash}",
         source=source,
         source_tier=source_tier,
         title=title,
@@ -434,7 +445,7 @@ async def extract_rss_endpoint(request: RSSFeedRequest):
         if not request.feed_url:
             raise HTTPException(status_code=400, detail="Must provide feed_url or feed_xml.")
         try:
-            resp = requests.get(request.feed_url, timeout=10, headers={"User-Agent": "VeriScope/1.0"})
+            resp = requests.get(request.feed_url, timeout=10, headers={"User-Agent": "Discovery/1.0"})
             resp.raise_for_status()
             xml_data = resp.text
         except Exception as e:
@@ -469,7 +480,7 @@ async def extract_url_endpoint(request: URLExtractRequest):
         if not url:
             raise HTTPException(status_code=400, detail="Must provide url or html_content.")
         try:
-            resp = requests.get(url, timeout=10, headers={"User-Agent": "VeriScope/1.0"})
+            resp = requests.get(url, timeout=10, headers={"User-Agent": "Discovery/1.0"})
             resp.raise_for_status()
             html = resp.text
         except Exception as e:
@@ -477,7 +488,7 @@ async def extract_url_endpoint(request: URLExtractRequest):
 
     data = extract_static_html(html, url)
     if request.force_browser or should_use_browser_fallback(html, data["extracted_text"]):
-        data = execute_browser_fallback(url, html)
+        data = await execute_browser_fallback_async(url, html)
 
     if request.title:
         data["title"] = request.title
@@ -565,7 +576,7 @@ async def extract_multimodal_endpoint(request: MultimodalExtractRequest):
         raise HTTPException(status_code=400, detail="Invalid media_type.")
 
     title = request.title or f"{request.media_type.value.title()} Media Coverage from {request.source_name}"
-    storage_ref = request.storage_ref or f"gs://veriscope-media/{uuid.uuid4()}.{request.media_type.value}"
+    storage_ref = request.storage_ref or f"gs://discovery-media/{uuid.uuid4()}.{request.media_type.value}"
 
     raw_article_data = {
         "title": title,

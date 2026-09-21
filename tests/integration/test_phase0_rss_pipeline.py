@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 0 RSS Extraction Pipeline
+Integration Tests for Discovery Phase 0 RSS Extraction Pipeline
 Tests full flow: Ingestion -> SHA-256 Deduplication -> DB Storage -> Event Bus Publishing
 """
 
@@ -15,19 +15,19 @@ client = TestClient(app)
 FIXTURE_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-  <title>VeriScope Live Wire</title>
-  <link>https://livewire.veriscope.ai</link>
+  <title>Discovery Live Wire</title>
+  <link>https://livewire.discovery.ai</link>
   <description>Automated live intelligence wire</description>
   <item>
     <title>Global Semiconductor Accord Signed in Geneva</title>
-    <link>https://livewire.veriscope.ai/articles/semiconductor-accord-2026</link>
+    <link>https://livewire.discovery.ai/articles/semiconductor-accord-2026</link>
     <description><![CDATA[Delegates from 40 nations signed the Semiconductor Accord establishing transparency standards.]]></description>
     <author>Geneva Bureau</author>
     <pubDate>Thu, 18 Sep 2026 11:00:00 GMT</pubDate>
   </item>
   <item>
     <title>Advanced Photonic Compute Cluster Achieves 100 Petaflops</title>
-    <link>https://livewire.veriscope.ai/articles/photonic-cluster-100pf</link>
+    <link>https://livewire.discovery.ai/articles/photonic-cluster-100pf</link>
     <description><![CDATA[A joint academic consortium demonstrated an energy-efficient photonic computing cluster.]]></description>
     <author>Elena Rostova</author>
     <pubDate>Thu, 18 Sep 2026 10:30:00 GMT</pubDate>

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Compass, Newspaper, FileText, Image, Building2,
   SlidersHorizontal, CheckCheck, MessageSquare, Sparkles,
-  BarChart3, Users, History
+  BarChart3, Users, History, Settings
 } from 'lucide-react';
 import { ViewType } from '../types';
 
@@ -32,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       group: 'CONFIGURATION & RULES',
       items: [
+        { id: 'settings' as ViewType, label: 'Settings & User Rules', icon: Settings },
         { id: 'entities' as ViewType, label: 'Entity Management', icon: Building2 },
         { id: 'rules' as ViewType, label: 'Rule Builder & Sandbox', icon: SlidersHorizontal },
       ],

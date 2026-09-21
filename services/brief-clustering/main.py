@@ -1,5 +1,5 @@
 """
-VeriScope Brief & Clustering Agent
+Discovery Brief & Clustering Agent
 Compliant with PRD Section 7.9, 8.9 and TRD Section 5.9 (Agent 9)
 
 Features:
@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("brief-clustering")
 
 app = FastAPI(
-    title="VeriScope Brief & Clustering Service",
+    title="Discovery Brief & Clustering Service",
     version="1.0.0",
     description="Embedding-based story clustering and schema-grounded summary generation service."
 )

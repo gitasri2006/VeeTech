@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 5 Trust Layer (Fact-Checking & Source Intelligence)
+Unit Tests for Discovery Phase 5 Trust Layer (Fact-Checking & Source Intelligence)
 Compliant with PRD Section 7.7, 7.8 & TRD Section 5.7, 5.8
 """
 
@@ -95,7 +95,7 @@ async def test_fact_check_manipulated_media_detection():
     media = MediaAsset(
         article_id=art.id,
         type=MediaType.VIDEO,
-        storage_ref="gs://veriscope/deepfake.mp4",
+        storage_ref="gs://discovery/deepfake.mp4",
         ocr_text="Deepfake tampered audio track detected.",
     )
     db.save_media_asset(media)

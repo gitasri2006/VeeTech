@@ -1,4 +1,4 @@
-# VeriScope Brief & Clustering Agent
+# Discovery Brief & Clustering Agent
 
 ## Overview
 The **Brief & Clustering Agent** (`services/brief-clustering/`) delivers automated story clustering, executive digest synthesis, and grounded sentence citation verification (Agent 9 per PRD Section 7.9 and TRD Section 5.9).

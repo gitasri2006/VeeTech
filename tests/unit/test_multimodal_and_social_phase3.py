@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 3 Social Platform Adapters & Multimodal Sub-Modules
+Unit Tests for Discovery Phase 3 Social Platform Adapters & Multimodal Sub-Modules
 Compliant with PRD Section 7.2, 8.2, 8.3 & TRD Section 5.2
 """
 

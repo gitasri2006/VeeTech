@@ -1,6 +1,6 @@
-# VeriScope Global Discovery Agent
+# Discovery Global Discovery Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.1** and **TRD Section 5.1**.
 
 ## Capabilities

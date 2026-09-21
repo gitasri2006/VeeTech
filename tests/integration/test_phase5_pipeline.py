@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 5 Pipeline
+Integration Tests for Discovery Phase 5 Pipeline
 Tests: Ingest Item -> Run Fact Check -> Verify Needs Review Queue -> Submit Analyst Sign-off
 """
 

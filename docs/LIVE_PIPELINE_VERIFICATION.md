@@ -1,10 +1,10 @@
-# VeriScope — Live Pipeline Verification & Integration Audit
+# Discovery — Live Pipeline Verification & Integration Audit
 
 ## 1. Executive Summary
 
 **OVERALL STATUS: WORKING (FULL END-TO-END INTEGRATION VERIFIED)**
 
-The entire VeriScope discovery and intelligence verification pipeline has been forensically audited, repaired, and validated across all 10 microservices, PostgreSQL database persistence, external live data providers, multilingual processing, multimodal extraction, and the frontend user interface.
+The entire Discovery discovery and intelligence verification pipeline has been forensically audited, repaired, and validated across all 10 microservices, PostgreSQL database persistence, external live data providers, multilingual processing, multimodal extraction, and the frontend user interface.
 
 - **Zero Mock Fallbacks**: All silent fallbacks returning static placeholder articles have been eliminated from the runtime path.
 - **Persistent Data Store**: PostgreSQL (`localhost:5432/discovery`) is the single persistent source of truth, maintaining 256 verified live records with zero duplicate canonical URLs.

@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 2 Pipeline
+Integration Tests for Discovery Phase 2 Pipeline
 Tests: Bare Keyword Search -> Global Discovery Fan-Out -> Candidate Ingestion into Pipeline
 """
 

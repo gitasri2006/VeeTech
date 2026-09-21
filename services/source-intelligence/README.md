@@ -1,6 +1,6 @@
-# VeriScope Source Intelligence Agent
+# Discovery Source Intelligence Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.8** and **TRD Section 5.8**.
 
 ## Capabilities

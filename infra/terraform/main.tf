@@ -15,7 +15,7 @@ provider "google" {
 
 variable "gcp_project_id" {
   type    = string
-  default = "veriscope-prod"
+  default = "discovery-prod"
 }
 
 variable "gcp_region" {
@@ -25,7 +25,7 @@ variable "gcp_region" {
 
 # GKE Cluster with Horizontal Autoscaling
 resource "google_container_cluster" "primary" {
-  name     = "veriscope-gke-cluster"
+  name     = "discovery-gke-cluster"
   location = var.gcp_region
 
   remove_default_node_pool = true
@@ -40,7 +40,7 @@ resource "google_container_cluster" "primary" {
 }
 
 resource "google_container_node_pool" "primary_nodes" {
-  name       = "veriscope-node-pool"
+  name       = "discovery-node-pool"
   location   = var.gcp_region
   cluster    = google_container_cluster.primary.name
   node_count = 3
@@ -62,7 +62,7 @@ resource "google_container_node_pool" "primary_nodes" {
 
 # Cloud SQL PostgreSQL 16 (with pgvector support)
 resource "google_sql_database_instance" "postgres" {
-  name             = "veriscope-pg-instance"
+  name             = "discovery-pg-instance"
   database_version = "POSTGRES_16"
   region           = var.gcp_region
 
@@ -80,7 +80,7 @@ resource "google_sql_database_instance" "postgres" {
 
 # Redis Memorystore (Message Bus & Rate Limiting)
 resource "google_redis_instance" "redis_bus" {
-  name           = "veriscope-redis-bus"
+  name           = "discovery-redis-bus"
   tier           = "STANDARD_HA"
   memory_size_gb = 5
   region         = var.gcp_region

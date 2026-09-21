@@ -1,5 +1,5 @@
 -- =====================================================================
--- Discovery / VeriScope PostgreSQL 16 + pgvector Database Schema
+-- Discovery / Discovery PostgreSQL 16 + pgvector Database Schema
 -- Compliant with TRD Section 6 (Data Model / Schema)
 -- =====================================================================
 
@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS briefs (
 
 -- 17. Seed initial admin and sample source tier data
 INSERT INTO users (id, name, email, role)
-VALUES ('usr-admin-01', 'System Admin', 'admin@veriscope.ai', 'Admin')
+VALUES ('usr-admin-01', 'System Admin', 'admin@discovery.ai', 'Admin')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO source_tiers (domain_or_handle, platform, tier, credibility_score, analyst_locked)

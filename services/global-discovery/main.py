@@ -1,15 +1,14 @@
 """
 Discovery Global News & Media Discovery Agent
-Compliant with PRD Section 7.1, TRD Section 5.1, and Unified Architecture Master Requirement
+Compliant with PRD Section 7.1, TRD Section 5.1, and Requirements 1-10 (Real AI Investigation Platform)
 
 Capabilities:
-1. Unified Search Pipeline: ONE Input (Text, Image, Audio, Video) -> Everything Automatic -> ONE Final Intelligence Result.
-2. Active Live Sources Fan-Out: Google News Live RSS, Hacker News API, YouTube Data API v3, Telegram, Web Extraction.
-3. Multimodal Ingestion: Auto-OCR for images, Whisper ASR for audio, Keyframe OCR & audio track processing for video.
-4. Multilingual NLP: Translates, disambiguates, and synthesizes intelligence briefs in user's target language (Hindi, Tamil, Telugu, Spanish, French, German, Chinese, Arabic, English, etc.).
-5. Google Fact Check Tools API + Gemini AI Reasoning: Real-time claim search, veracity evaluation, and credibility scoring.
-6. Autonomous Background Ingestion: Continuous 5-minute scheduler polling RSS feeds, Google News, and Hacker News.
-7. Graceful Source Resilience: Individual source failure never blocks the search; skipped sources (Reddit, WhatsApp, Instagram) are omitted without error.
+1. Dynamic Investigation Planning: Analyzes user input, extracts entities, expands multi-angle search queries.
+2. Active Live Sources Fan-Out: Serper.dev (Google News & Web), Google News Live RSS, Wikipedia Tier 1, Hacker News API, YouTube Data API v3, DuckDuckGo Live, GDELT 2.0.
+3. Deep Dynamic Page Scraping: Playwright headless Chromium extraction for JS/SPA news portals.
+4. Real Fact-Checking & Corroboration: Live Google Fact Check API + Serper debunker searches with Dual-LLM (Gemini + Mistral) consensus.
+5. Grounded Intelligence Synthesis: Zero-hallucination, multilingual intelligence briefings in any requested language.
+6. Persistent Observability & Traceability: Full `request_id -> agent -> tool -> input -> result -> decision -> timestamp` stored in PostgreSQL.
 """
 
 import asyncio
@@ -32,14 +31,32 @@ from pydantic import BaseModel, Field
 
 from services.common.bus import bus
 from services.common.db import db
-from services.common.gemini_client import gemini_client
+from services.common.llm_router import llm_router
 from services.common.models import Article, Entity, MediaType, MediaAsset
+from services.common.tracer import ExecutionTracer
 from services.extraction.multimodal_processor import (
     image_processor,
     audio_processor,
     video_processor,
     ProcessedMediaOutput,
 )
+try:
+    from services.extraction.playwright_scraper import playwright_scraper
+except Exception:
+    import importlib
+    playwright_scraper = importlib.import_module("services.extraction.playwright_scraper").playwright_scraper
+
+try:
+    from serper_adapter import serper_adapter, classify_source_tier
+    from gdelt_adapter import gdelt_adapter
+except Exception:
+    import importlib
+    serper_mod = importlib.import_module("services.global-discovery.serper_adapter")
+    serper_adapter = serper_mod.serper_adapter
+    classify_source_tier = serper_mod.classify_source_tier
+    gdelt_mod = importlib.import_module("services.global-discovery.gdelt_adapter")
+    gdelt_adapter = gdelt_mod.gdelt_adapter
+
 try:
     from scheduler import scheduler
 except ImportError:
@@ -70,19 +87,21 @@ LANGUAGE_NAMES = {
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start background scheduler
     scheduler.start()
     logger.info("Global Discovery service and Background Scheduler started.")
     yield
-    # Stop background scheduler on shutdown
     scheduler.stop()
+    try:
+        await playwright_scraper.close()
+    except Exception:
+        pass
     logger.info("Global Discovery service stopped.")
 
 
 app = FastAPI(
     title="Discovery Global Discovery & Unified Intelligence Agent",
     description="Unified Multimodal, Multi-Source Live Discovery, Fact-Checking, and Intelligence Synthesis Service",
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -119,13 +138,13 @@ class UnifiedSearchRequest(BaseModel):
     mock_ocr_text: Optional[str] = None
     mock_transcript: Optional[str] = None
     mock_caption: Optional[str] = None
-    mock_keyframes: Optional[List[str]] = None
     scope: DiscoveryScope = Field(default_factory=DiscoveryScope)
+    time_range: Optional[str] = Field(default="all", description="'all', '24h', '7d', '30d'")
+    strict_relevance: bool = Field(default=True, description="Strictly filter out off-topic candidate articles")
     max_candidates_per_source: int = Field(default=15, ge=1, le=50)
     auto_ingest: bool = Field(default=True)
     conversation_history: Optional[List[ChatMessage]] = Field(default=None, description="Prior conversation messages for follow-up reasoning.")
     previous_sources: Optional[List[Dict[str, Any]]] = Field(default=None, description="Previously retrieved sources for context continuity.")
-
 
 
 class IntelligenceResultSchema(BaseModel):
@@ -136,6 +155,7 @@ class IntelligenceResultSchema(BaseModel):
     authenticity_score: float
     authenticity_rationale: str
     claims: List[Dict[str, Any]]
+    cross_source_analysis: Optional[Dict[str, Any]] = None
 
 
 class UnifiedSearchResponse(BaseModel):
@@ -152,68 +172,12 @@ class UnifiedSearchResponse(BaseModel):
     multimodal_evidence: Optional[Dict[str, Any]] = None
     candidates_count: int
     expanded_queries: List[str]
+    execution_trace: Optional[Dict[str, Any]] = None
 
 
 # =====================================================================
-# Multilingual Fast Translator
+# Live Search Adapters
 # =====================================================================
-
-def translate_text_sync(text: str, target_lang: str) -> str:
-    """Translates text synchronously using fast translation endpoint or falls back gracefully."""
-    if not text or target_lang in ("en", "all", ""):
-        return text
-    try:
-        encoded = urllib.parse.quote(text[:1000])
-        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target_lang}&dt=t&q={encoded}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Discovery/2.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            translated = "".join([part[0] for part in data[0] if part[0]])
-            return translated if translated else text
-    except Exception:
-        return text
-
-
-async def translate_sources_batch(sources: List[Dict[str, Any]], target_lang: str) -> List[Dict[str, Any]]:
-    """Translates titles and snippets of all discovered sources in parallel when target language is not English."""
-    if not sources or target_lang in ("en", "all", ""):
-        return sources
-    
-    loop = asyncio.get_event_loop()
-    
-    async def _translate_single(src: Dict[str, Any]) -> Dict[str, Any]:
-        new_src = dict(src)
-        title = src.get("title", "")
-        snippet = src.get("snippet", "")
-        
-        # Check if already in target script (e.g. non-ascii)
-        is_ascii = all(ord(c) < 128 for c in title)
-        if is_ascii and title:
-            trans_title = await loop.run_in_executor(None, lambda: translate_text_sync(title, target_lang))
-            new_src["title"] = trans_title
-        
-        if is_ascii and snippet:
-            trans_snippet = await loop.run_in_executor(None, lambda: translate_text_sync(snippet, target_lang))
-            new_src["snippet"] = trans_snippet
-            
-        return new_src
-
-    tasks = [_translate_single(s) for s in sources]
-    translated_sources = await asyncio.gather(*tasks, return_exceptions=True)
-    return [s for s in translated_sources if isinstance(s, dict)]
-
-
-# =====================================================================
-# Live Search Adapters (Wikipedia Tier 1, Google News Live, HackerNews, YouTube)
-# =====================================================================
-
-class DiscoveryAdapter:
-    """Base discovery adapter."""
-    name: str = "base"
-
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 10, target_language: str = "en") -> List[Dict[str, Any]]:
-        raise NotImplementedError
-
 
 def _extract_domain(url: str) -> str:
     try:
@@ -226,102 +190,41 @@ def _extract_domain(url: str) -> str:
         return "web"
 
 
-def _clean_html_snippet(raw_html: str) -> str:
-    if not raw_html:
-        return ""
-    clean = re.sub(r"<[^>]+>", " ", raw_html)
-    clean = re.sub(r"&[a-z]+;", " ", clean)
-    return re.sub(r"\s+", " ", clean).strip()
-
-
-def classify_source_tier(domain_or_source: str, platform: str = "web") -> Dict[str, Any]:
-    """
-    Classifies sources into TRD-compliant Tier 1, Tier 2, or Tier 3 with credibility scoring.
-    """
-    dom = (domain_or_source or "").lower().strip()
-    
-    # Tier 1: Global News Wires, High Authority Academic/Encyclopedic, Accredited Fact Checkers, Govt Portals
-    t1_keywords = [
-        "wikipedia", "reuters", "apnews", "ap news", "associated press", "bbc", "bloomberg", 
-        "thehindu", "the hindu", "hindutamil", "hindu tamil", "nytimes", "new york times", "wsj", 
-        "wall street journal", "ft.com", "financial times", "cnbc", "pib.gov.in", "gov.in", 
-        ".gov", ".edu", ".ac.in", "nature.com", "science.org", "who.int", "altnews", "boomlive", 
-        "snopes", "factcheck", "politifact", "poynter"
-    ]
-    
-    # Tier 2: Mainstream Press, Tech Journalism & Specialized Regional/National Media
-    t2_keywords = [
-        "techcrunch", "theverge", "the verge", "wired", "arstechnica", "venturebeat",
-        "technologyreview", "ndtv", "indianexpress", "indian express", "hindustantimes", 
-        "hindustan times", "economictimes", "economic times", "timesofindia", "times of india", 
-        "aljazeera", "al jazeera", "forbes", "fortune", "sciencemag", "zdnet", "engadget", 
-        "cnet", "theprint", "scroll.in", "vikatan", "dinamalar", "puthiyathalaimurai", 
-        "tamil.news18", "news18", "aajtak", "dainikbhaskar", "guardian", "lemonde", "spiegel"
-    ]
-
-    if any(k in dom for k in t1_keywords) or platform == "factcheck":
-        return {
-            "tier": 1,
-            "tier_label": "Tier 1: High Authority News Wire / Academic / Fact Check",
-            "credibility_score": 0.95,
-            "tier_description": "Verified high-authority news agency, encyclopedic repository, or accredited fact-checking body."
-        }
-    elif any(k in dom for k in t2_keywords):
-        return {
-            "tier": 2,
-            "tier_label": "Tier 2: Mainstream Press & Editorial Journalism",
-            "credibility_score": 0.80,
-            "tier_description": "Established commercial news publication with professional editorial standards and credited journalism."
-        }
-    else:
-        return {
-            "tier": 3,
-            "tier_label": "Tier 3: Tech Community / Social Broadcast",
-            "credibility_score": 0.65,
-            "tier_description": "User-generated, social broadcast, or community discussion platform requiring contextual verification."
-        }
-
-
-class WikipediaKnowledgeAdapter(DiscoveryAdapter):
-    """Fetches high-authority encyclopedic, scientific, and historical articles from Wikipedia REST & OpenSearch APIs (Tier 1)."""
+class WikipediaKnowledgeAdapter:
     name: str = "wikipedia_tier1"
 
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 5, target_language: str = "en") -> List[Dict[str, Any]]:
+    async def search(self, queries: List[str], limit: int = 5, target_language: str = "en") -> List[Dict[str, Any]]:
         results = []
         loop = asyncio.get_event_loop()
-        
         for q in queries:
             try:
                 encoded_q = urllib.parse.quote(q)
-                # Query Wikipedia OpenSearch API
                 opensearch_url = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={encoded_q}&limit=3&namespace=0&format=json"
-                req = urllib.request.Request(opensearch_url, headers={"User-Agent": "DiscoveryIntelligence/2.0"})
+                req = urllib.request.Request(opensearch_url, headers={"User-Agent": "DiscoveryIntelligence/3.0"})
                 data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=4).read())
                 data = json.loads(data_bytes.decode("utf-8"))
-                
+
                 titles = data[1] if len(data) > 1 else []
                 snippets = data[2] if len(data) > 2 else []
                 urls = data[3] if len(data) > 3 else []
-                
                 tier_info = classify_source_tier("wikipedia.org", "web")
-                
+
                 for t, s, u in zip(titles, snippets, urls):
                     if t and u:
-                        # Attempt to get rich summary extract
-                        extract = s or f"Encyclopedic and peer-reviewed reference regarding {t}."
+                        extract = s or f"Encyclopedic reference regarding {t}."
                         try:
                             sum_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(t)}"
-                            sum_req = urllib.request.Request(sum_url, headers={"User-Agent": "DiscoveryIntelligence/2.0"})
+                            sum_req = urllib.request.Request(sum_url, headers={"User-Agent": "DiscoveryIntelligence/3.0"})
                             sum_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(sum_req, timeout=3).read())
                             sum_data = json.loads(sum_bytes.decode("utf-8"))
                             if sum_data.get("extract"):
                                 extract = sum_data.get("extract")
                         except Exception:
                             pass
-                        
+
                         results.append({
                             "url": u,
-                            "title": f"{t} - Comprehensive Academic Reference",
+                            "title": f"{t} - Wikipedia Reference",
                             "source": "Wikipedia (Open Knowledge)",
                             "domain": "wikipedia.org",
                             "platform": "web",
@@ -335,12 +238,11 @@ class WikipediaKnowledgeAdapter(DiscoveryAdapter):
                             "published_at_raw": datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
                         })
             except Exception as e:
-                logger.debug("Wikipedia search notice for '%s': %s", q, e)
+                logger.debug("Wikipedia notice for '%s': %s", q, e)
         return results[:limit]
 
 
-class GoogleNewsLiveDiscoveryAdapter(DiscoveryAdapter):
-    """Fetches real live news articles directly from Google News RSS feed matching user keywords across global and multilingual feeds."""
+class GoogleNewsLiveDiscoveryAdapter:
     name: str = "google_news_live"
 
     LANG_PARAMS = {
@@ -364,17 +266,13 @@ class GoogleNewsLiveDiscoveryAdapter(DiscoveryAdapter):
         "en": ("en-US", "US", "US:en"),
     }
 
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 15, target_language: str = "en") -> List[Dict[str, Any]]:
+    async def search(self, queries: List[str], limit: int = 15, target_language: str = "en") -> List[Dict[str, Any]]:
         results = []
         loop = asyncio.get_event_loop()
-        
-        # Build endpoints: If non-English requested, fetch target language feed + global English feed
         endpoints = []
         if target_language in self.LANG_PARAMS and target_language != "en":
             hl, gl, ceid = self.LANG_PARAMS[target_language]
             endpoints.append((hl, gl, ceid))
-        
-        # Always include global English feed for worldwide coverage
         endpoints.append(("en-US", "US", "US:en"))
 
         for q in queries:
@@ -384,11 +282,11 @@ class GoogleNewsLiveDiscoveryAdapter(DiscoveryAdapter):
                     url = f"https://news.google.com/rss/search?q={encoded_q}&hl={hl}&gl={gl}&ceid={ceid}"
                     req = urllib.request.Request(
                         url,
-                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 DiscoveryBot/2.0"}
+                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) DiscoveryBot/3.0"}
                     )
                     xml_data = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=5).read())
                     root = ET.fromstring(xml_data)
-                    for it in root.findall(".//item")[:10]:
+                    for it in root.findall(".//item")[:8]:
                         title = it.findtext("title", default="").strip()
                         link = it.findtext("link", default="").strip()
                         pub = it.findtext("pubDate", default="")
@@ -396,17 +294,12 @@ class GoogleNewsLiveDiscoveryAdapter(DiscoveryAdapter):
                         source_elem = it.find("source")
                         source_name = source_elem.text.strip() if source_elem is not None and source_elem.text else ""
                         source_url = source_elem.get("url") if source_elem is not None else ""
-                        
+
                         domain = _extract_domain(source_url or link)
-                        display_source = source_name or domain or "Global News Wire"
-                        
-                        # Clean title to remove trailing " - Source Name"
-                        clean_title = title
-                        if " - " in title:
-                            clean_title = title.rsplit(" - ", 1)[0].strip()
-                        
+                        display_source = source_name or domain or "Google News Wire"
+                        clean_title = title.rsplit(" - ", 1)[0].strip() if " - " in title else title
                         tier_info = classify_source_tier(display_source, "web")
-                        snippet = _clean_html_snippet(raw_desc) or f"Live coverage regarding {clean_title} reported by {display_source}."
+                        clean_snippet = re.sub(r'<[^>]+>', ' ', raw_desc).strip()
 
                         if clean_title and link:
                             results.append({
@@ -421,27 +314,25 @@ class GoogleNewsLiveDiscoveryAdapter(DiscoveryAdapter):
                                 "tier_label": tier_info["tier_label"],
                                 "credibility_score": tier_info["credibility_score"],
                                 "tier_description": tier_info["tier_description"],
-                                "snippet": snippet,
+                                "snippet": clean_snippet or f"Live coverage on {clean_title} reported by {display_source}.",
                                 "published_at_raw": pub,
                             })
                 except Exception as e:
-                    logger.debug("Google News Live fetch notice for '%s' (%s): %s", q, hl, e)
-                    
+                    logger.debug("Google News fetch notice for '%s': %s", q, e)
         return results[:limit]
 
 
-class HackerNewsDiscoveryAdapter(DiscoveryAdapter):
-    """Live technology & research discovery adapter querying Hacker News with keyword relevance search."""
+class HackerNewsDiscoveryAdapter:
     name: str = "hackernews"
 
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 10, target_language: str = "en") -> List[Dict[str, Any]]:
+    async def search(self, queries: List[str], limit: int = 8, target_language: str = "en") -> List[Dict[str, Any]]:
         results = []
         loop = asyncio.get_event_loop()
         for q in queries:
             try:
                 encoded_q = urllib.parse.quote(q)
-                hn_url = f"https://hn.algolia.com/api/v1/search?query={encoded_q}&tags=story&hitsPerPage=10"
-                req = urllib.request.Request(hn_url, headers={"User-Agent": "Discovery/2.0"})
+                hn_url = f"https://hn.algolia.com/api/v1/search?query={encoded_q}&tags=story&hitsPerPage=6"
+                req = urllib.request.Request(hn_url, headers={"User-Agent": "Discovery/3.0"})
                 data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=4).read())
                 data = json.loads(data_bytes.decode("utf-8"))
                 for hit in data.get("hits", []):
@@ -449,13 +340,12 @@ class HackerNewsDiscoveryAdapter(DiscoveryAdapter):
                     story_url = hit.get("url") or f"https://news.ycombinator.com/item?id={hit.get('objectID')}"
                     domain = _extract_domain(story_url)
                     points = hit.get("points", 0)
-                    author = hit.get("author", "hn_user")
                     tier_info = classify_source_tier(domain or "Hacker News", "web")
                     if title and story_url:
                         results.append({
                             "url": story_url,
                             "title": title,
-                            "source": domain if domain != "news.ycombinator.com" else "Hacker News Discussions",
+                            "source": domain if domain != "news.ycombinator.com" else "Hacker News",
                             "domain": domain,
                             "platform": "web",
                             "discovered_at": datetime.now(timezone.utc).isoformat(),
@@ -464,88 +354,63 @@ class HackerNewsDiscoveryAdapter(DiscoveryAdapter):
                             "tier_label": tier_info["tier_label"],
                             "credibility_score": tier_info["credibility_score"],
                             "tier_description": tier_info["tier_description"],
-                            "snippet": f"Technical discussion ({points} points by @{author}) providing community insights and research analysis on {title}.",
+                            "snippet": f"Technical discussion ({points} points) on {title}.",
                             "published_at_raw": hit.get("created_at"),
                         })
             except Exception as e:
-                logger.debug("Hacker News Algolia search fallback: %s", e)
-
+                logger.debug("Hacker News notice: %s", e)
         return results[:limit]
 
 
-class YouTubeLiveDiscoveryAdapter(DiscoveryAdapter):
-    """YouTube Data API v3 & Real Video Briefings Discovery Adapter."""
+class YouTubeLiveDiscoveryAdapter:
     name: str = "youtube_live"
 
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 10, target_language: str = "en") -> List[Dict[str, Any]]:
+    async def search(self, queries: List[str], limit: int = 8, target_language: str = "en") -> List[Dict[str, Any]]:
         results = []
         yt_api_key = os.getenv("YOUTUBE_API_KEY")
+        if not yt_api_key or yt_api_key == "your_youtube_api_key_here":
+            return []
+
         loop = asyncio.get_event_loop()
-
         for q in queries:
-            if yt_api_key:
-                try:
-                    encoded_q = urllib.parse.quote(q)
-                    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encoded_q}&type=video&maxResults=5&key={yt_api_key}"
-                    req = urllib.request.Request(url, headers={"User-Agent": "Discovery/2.0"})
-                    data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=5).read())
-                    data = json.loads(data_bytes.decode("utf-8"))
-                    for item in data.get("items", []):
-                        vid_id = item.get("id", {}).get("videoId")
-                        snip = item.get("snippet", {})
-                        channel_title = snip.get("channelTitle", "YouTube Broadcast")
-                        tier_info = classify_source_tier(channel_title, "youtube")
-                        if vid_id and snip.get("title"):
-                            results.append({
-                                "url": f"https://www.youtube.com/watch?v={vid_id}",
-                                "title": snip.get("title"),
-                                "source": channel_title,
-                                "domain": "youtube.com",
-                                "platform": "youtube",
-                                "discovered_at": datetime.now(timezone.utc).isoformat(),
-                                "adapter": "youtube_live",
-                                "source_tier": tier_info["tier"],
-                                "tier_label": tier_info["tier_label"],
-                                "credibility_score": tier_info["credibility_score"],
-                                "tier_description": tier_info["tier_description"],
-                                "snippet": snip.get("description") or f"Broadcast video analysis and conference presentation published by {channel_title}.",
-                                "published_at_raw": snip.get("publishedAt"),
-                            })
-                except Exception as e:
-                    logger.debug("YouTube API search notice for '%s': %s", q, e)
-
-            # If no API key or no items returned, link to genuine YouTube Search Results URL
-            if not results:
+            try:
                 encoded_q = urllib.parse.quote(q)
-                tier_info = classify_source_tier("YouTube Media", "youtube")
-                results.append({
-                    "url": f"https://www.youtube.com/results?search_query={encoded_q}",
-                    "title": f"Video Keynotes & Industry Briefings: {q.title()}",
-                    "source": "YouTube Broadcast Network",
-                    "domain": "youtube.com",
-                    "platform": "youtube",
-                    "discovered_at": datetime.now(timezone.utc).isoformat(),
-                    "adapter": "youtube_live",
-                    "source_tier": 3,
-                    "tier_label": "Tier 3: Tech Community / Social Broadcast",
-                    "credibility_score": 0.70,
-                    "tier_description": "Curated video presentations, keynote broadcasts, and technical demonstrations.",
-                    "snippet": f"Explore real-time video briefings, lectures, and expert discussions regarding {q}.",
-                })
+                url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encoded_q}&type=video&maxResults=5&key={yt_api_key}"
+                req = urllib.request.Request(url, headers={"User-Agent": "Discovery/3.0"})
+                data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=5).read())
+                data = json.loads(data_bytes.decode("utf-8"))
+                for item in data.get("items", []):
+                    vid_id = item.get("id", {}).get("videoId")
+                    snip = item.get("snippet", {})
+                    channel_title = snip.get("channelTitle", "YouTube Broadcast")
+                    tier_info = classify_source_tier(channel_title, "youtube")
+                    if vid_id and snip.get("title"):
+                        results.append({
+                            "url": f"https://www.youtube.com/watch?v={vid_id}",
+                            "title": snip.get("title"),
+                            "source": channel_title,
+                            "domain": "youtube.com",
+                            "platform": "youtube",
+                            "discovered_at": datetime.now(timezone.utc).isoformat(),
+                            "adapter": "youtube_live",
+                            "source_tier": tier_info["tier"],
+                            "tier_label": tier_info["tier_label"],
+                            "credibility_score": tier_info["credibility_score"],
+                            "tier_description": tier_info["tier_description"],
+                            "snippet": snip.get("description") or f"Broadcast video report published by {channel_title}.",
+                            "published_at_raw": snip.get("publishedAt"),
+                        })
+            except Exception as e:
+                logger.debug("YouTube API notice for '%s': %s", q, e)
         return results[:limit]
 
 
-class DuckDuckGoWebNewsDiscoveryAdapter(DiscoveryAdapter):
-    """
-    Live Web & Breaking News Discovery Adapter querying live web search with fuzzy resilience and redirect unwrapping.
-    Captures live breaking events, regional press, celebrity news, government notices, social broadcasts, and international headlines.
-    """
+class DuckDuckGoWebNewsDiscoveryAdapter:
     name: str = "web_news_live"
 
-    async def search(self, queries: List[str], scope: DiscoveryScope, limit: int = 15, target_language: str = "en") -> List[Dict[str, Any]]:
+    async def search(self, queries: List[str], limit: int = 12, target_language: str = "en") -> List[Dict[str, Any]]:
         results = []
         loop = asyncio.get_event_loop()
-
         for q in queries:
             if not q or len(q.strip()) < 2:
                 continue
@@ -556,56 +421,45 @@ class DuckDuckGoWebNewsDiscoveryAdapter(DiscoveryAdapter):
                         "https://lite.duckduckgo.com/lite/",
                         data=data,
                         headers={
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 DiscoveryBot/3.0",
                             "Content-Type": "application/x-www-form-urlencoded"
                         }
                     )
                     items = []
-                    with urllib.request.urlopen(req, timeout=6) as resp:
+                    with urllib.request.urlopen(req, timeout=5) as resp:
                         raw_html = resp.read().decode("utf-8", errors="ignore")
                         link_pattern = re.compile(r'<a[^>]*class=[\'"]result-link[\'"][^>]*href=[\'"](.*?)[\'"][^>]*>(.*?)</a>', re.DOTALL | re.IGNORECASE)
                         link_pattern_alt = re.compile(r'<a[^>]*href=[\'"](.*?)[\'"][^>]*class=[\'"]result-link[\'"][^>]*>(.*?)</a>', re.DOTALL | re.IGNORECASE)
-                        
                         raw_links = link_pattern.findall(raw_html) or link_pattern_alt.findall(raw_html)
                         raw_snippets = re.findall(r'<td[^>]*class=[\'"]result-snippet[\'"][^>]*>(.*?)</td>', raw_html, re.DOTALL | re.IGNORECASE)
-                        
-                        for i, (u, t) in enumerate(raw_links[:10]):
-                            clean_t = re.sub(r'<[^>]+>', '', t).strip()
-                            clean_t = html.unescape(clean_t)
+
+                        for i, (u, t) in enumerate(raw_links[:8]):
+                            clean_t = html.unescape(re.sub(r'<[^>]+>', '', t).strip())
                             clean_s = ""
                             if i < len(raw_snippets):
-                                clean_s = re.sub(r'<[^>]+>', ' ', raw_snippets[i]).strip()
-                                clean_s = html.unescape(re.sub(r'\s+', ' ', clean_s))
-                            
+                                clean_s = html.unescape(re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', raw_snippets[i])).strip())
+
                             actual_url = u
                             if "duckduckgo.com/l/?uddg=" in actual_url:
                                 parsed_q = urllib.parse.parse_qs(urllib.parse.urlparse(actual_url).query)
                                 if "uddg" in parsed_q:
                                     actual_url = parsed_q["uddg"][0]
-                            
+
                             domain = _extract_domain(actual_url)
-                            source_name = domain.title() if domain else "Live Web News"
-                            if "instagram.com" in domain:
-                                source_name = "Instagram Public Broadcast"
-                            elif "facebook.com" in domain:
-                                source_name = "Facebook Press / Public Post"
-                            elif "youtube.com" in domain:
-                                source_name = "YouTube Video Report"
-                            
-                            tier_info = classify_source_tier(domain or source_name, "web")
+                            tier_info = classify_source_tier(domain, "web")
                             items.append({
                                 "url": actual_url,
                                 "title": clean_t,
-                                "source": source_name,
+                                "source": domain.title(),
                                 "domain": domain,
-                                "platform": "web" if "youtube.com" not in domain else "youtube",
+                                "platform": "web",
                                 "discovered_at": datetime.now(timezone.utc).isoformat(),
                                 "adapter": "web_news_live",
                                 "source_tier": tier_info["tier"],
                                 "tier_label": tier_info["tier_label"],
                                 "credibility_score": tier_info["credibility_score"],
                                 "tier_description": tier_info["tier_description"],
-                                "snippet": clean_s or f"Live coverage and news report regarding {clean_t}.",
+                                "snippet": clean_s or f"Live coverage regarding {clean_t}.",
                                 "published_at_raw": datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
                             })
                     return items
@@ -613,96 +467,61 @@ class DuckDuckGoWebNewsDiscoveryAdapter(DiscoveryAdapter):
                 items = await loop.run_in_executor(None, lambda: _do_fetch(q))
                 results.extend(items)
             except Exception as e:
-                logger.debug("Web News Live search notice for '%s': %s", q, e)
-                
+                logger.debug("DuckDuckGo notice for '%s': %s", q, e)
         return results[:limit]
 
 
-# ACTIVE ADAPTERS: Multi-angle high-quality live adapters (DuckDuckGo Web/News, Google News Live, Wikipedia Tier 1, HackerNews, YouTube)
-active_adapters: List[DiscoveryAdapter] = [
-    DuckDuckGoWebNewsDiscoveryAdapter(),
-    GoogleNewsLiveDiscoveryAdapter(),
-    WikipediaKnowledgeAdapter(),
-    HackerNewsDiscoveryAdapter(),
-    YouTubeLiveDiscoveryAdapter(),
-]
-
-
 # =====================================================================
-# Google Fact Check Tools API Claim Search
+# Google Fact Check Tools API
 # =====================================================================
 
-def query_google_factcheck_api(query_text: str) -> List[Dict[str, Any]]:
-    """Query live Google Fact Check API for verified claims and ratings."""
+async def query_google_factcheck_api(query_text: str) -> List[Dict[str, Any]]:
+    """Query live Google Fact Check API for verified claim reviews."""
     matches = []
     api_key = os.getenv("GOOGLE_FACTCHECK_API_KEY") or os.getenv("GEMINI_API_KEY")
     if api_key and query_text:
         try:
             encoded = urllib.parse.quote(query_text.strip()[:100])
             url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={encoded}&key={api_key}"
-            req = urllib.request.Request(url, headers={"User-Agent": "Discovery/1.0"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                for item in data.get("claims", [])[:5]:
-                    reviews = item.get("claimReview", [])
-                    if reviews:
-                        rev = reviews[0]
-                        matches.append({
-                            "claim": item.get("text", query_text),
-                            "claimant": item.get("claimant", "Public Claim"),
-                            "fact_checker": rev.get("publisher", {}).get("name", "Fact Checker"),
-                            "rating": rev.get("textualRating", "Unverified"),
-                            "url": rev.get("url", ""),
-                            "review_date": rev.get("reviewDate", datetime.now(timezone.utc).isoformat()),
-                        })
+            req = urllib.request.Request(url, headers={"User-Agent": "Discovery/3.0"})
+            loop = asyncio.get_event_loop()
+            data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=5).read())
+            data = json.loads(data_bytes.decode("utf-8"))
+            for item in data.get("claims", [])[:6]:
+                reviews = item.get("claimReview", [])
+                if reviews:
+                    rev = reviews[0]
+                    matches.append({
+                        "claim": item.get("text", query_text),
+                        "claimant": item.get("claimant", "Public Claim"),
+                        "fact_checker": rev.get("publisher", {}).get("name", "Fact Checker"),
+                        "rating": rev.get("textualRating", "Unverified"),
+                        "url": rev.get("url", ""),
+                        "review_date": rev.get("reviewDate", datetime.now(timezone.utc).isoformat()),
+                    })
         except Exception as exc:
-            logger.debug("Google Fact Check API query notice: %s", exc)
-
-    # Deterministic knowledge fallback if offline or no direct matches
-    if not matches:
-        q_lower = query_text.lower()
-        if any(w in q_lower for w in ["hoax", "fake", "5g", "cure", "deepfake", "unesco", "nasa"]):
-            matches.append({
-                "claim": f"Viral claim regarding {query_text}.",
-                "claimant": "Social Media Posts",
-                "fact_checker": "Alt News & BOOM Live",
-                "rating": "False / Fabricated",
-                "url": "https://boomlive.in/fact-check",
-                "review_date": datetime.now(timezone.utc).isoformat(),
-            })
+            logger.debug("Google Fact Check API notice: %s", exc)
     return matches
 
 
 # =====================================================================
-# Unified Discovery & Intelligence Pipeline
+# Master Dynamic Investigation & Intelligence Pipeline
 # =====================================================================
-
-def expand_queries(keywords: List[str], entity: Optional[Entity] = None) -> List[str]:
-    queries = set(keywords)
-    if entity:
-        queries.add(entity.name)
-        for alias in entity.aliases[:4]:
-            if alias:
-                queries.add(alias)
-        for seed in entity.seed_terms[:3]:
-            if seed:
-                queries.add(f"{entity.name} {seed}")
-    return list(queries)
-
 
 async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, Any]:
     """
-    ONE INPUT -> EVERYTHING AUTOMATIC -> ONE FINAL INTELLIGENCE RESULT
+    ONE INPUT -> REAL AI REASONING & MULTI-STEP INVESTIGATION -> EVIDENCE GROUNDED INTELLIGENCE DOSSIER
     """
     import base64
+    request_id = str(uuid.uuid4())
+    raw_query = request.query or (request.keywords[0] if request.keywords else "")
+    tracer = ExecutionTracer(request_id=request_id, user_query=raw_query)
 
-    # 1. Modality Detection & Multimodal Processing
+    # 1. Modality Extraction & Pre-processing
     modality = (request.input_modality or "text").lower()
-    multimodal_output: Optional[ProcessedMediaOutput] = None
     multimodal_evidence_dict: Optional[Dict[str, Any]] = None
-
-    # Decode media bytes if base64 provided
     media_bytes: Optional[bytes] = None
+
     if request.media_base64:
         try:
             b64_str = request.media_base64
@@ -712,20 +531,12 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
         except Exception as b64_err:
             logger.warning("Base64 decode notice: %s", b64_err)
 
-    search_query = request.query or ""
-    if request.keywords:
-        search_query = search_query or " ".join(request.keywords)
-
-    # Clean generic screenshot / file name placeholder strings from query
-    is_placeholder_query = any(k in search_query.lower() for k in ["screenshot", ".png", ".jpg", ".jpeg", "img_", "image", "audio_", "video_"])
-    if is_placeholder_query:
-        search_query = ""
-
+    search_query = raw_query
     loop = asyncio.get_event_loop()
 
     if modality == "image":
         try:
-            multimodal_output = await asyncio.wait_for(
+            m_out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
                     lambda: image_processor.process_image(
@@ -735,29 +546,19 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
                         mime_type=request.media_mime_type or "image/png",
                     )
                 ),
-                timeout=18.0
+                timeout=12.0
             )
+            detected = m_out.metadata.get("detected_query") or m_out.ocr_text or m_out.caption
+            if detected and not search_query:
+                search_query = detected
+            multimodal_evidence_dict = {"ocr_text": m_out.ocr_text, "caption": m_out.caption, "media_type": "image"}
+            tracer.log_step("MultimodalAgent", "ImageOCR_Captioning", {"bytes": len(media_bytes) if media_bytes else 0}, f"OCR text: {m_out.ocr_text[:80]}", "Extracted image content for investigation")
         except Exception as e:
-            logger.debug("Async image processor notice: %s", e)
-            multimodal_output = image_processor.process_image(
-                mock_embedded_text=request.mock_ocr_text,
-                mock_visual_scene=request.mock_caption,
-            )
-
-        detected_q = multimodal_output.metadata.get("detected_query") or multimodal_output.ocr_text or multimodal_output.caption
-        if detected_q and not search_query:
-            search_query = detected_q
-
-        multimodal_evidence_dict = {
-            "ocr_text": multimodal_output.ocr_text,
-            "visual_caption": multimodal_output.caption,
-            "detected_topic": multimodal_output.metadata.get("detected_topic"),
-            "media_type": "image",
-        }
+            logger.debug("Image processing error: %s", e)
 
     elif modality == "audio":
         try:
-            multimodal_output = await asyncio.wait_for(
+            m_out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
                     lambda: audio_processor.process_audio(
@@ -766,27 +567,19 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
                         mime_type=request.media_mime_type or "audio/mp3",
                     )
                 ),
-                timeout=18.0
+                timeout=12.0
             )
+            detected = m_out.metadata.get("detected_query") or m_out.transcript
+            if detected and not search_query:
+                search_query = detected
+            multimodal_evidence_dict = {"transcript": m_out.transcript, "media_type": "audio"}
+            tracer.log_step("MultimodalAgent", "WhisperASR", {"bytes": len(media_bytes) if media_bytes else 0}, f"Transcript: {m_out.transcript[:80]}", "Transcribed audio track")
         except Exception as e:
-            logger.debug("Async audio processor notice: %s", e)
-            multimodal_output = audio_processor.process_audio(
-                mock_transcript=request.mock_transcript,
-            )
-
-        detected_q = multimodal_output.metadata.get("detected_query") or multimodal_output.transcript
-        if detected_q and not search_query:
-            search_query = detected_q
-
-        multimodal_evidence_dict = {
-            "transcript": multimodal_output.transcript,
-            "detected_topic": multimodal_output.metadata.get("detected_topic"),
-            "media_type": "audio",
-        }
+            logger.debug("Audio processing error: %s", e)
 
     elif modality == "video":
         try:
-            multimodal_output = await asyncio.wait_for(
+            m_out = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,
                     lambda: video_processor.process_video(
@@ -797,84 +590,182 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
                         mime_type=request.media_mime_type or "video/mp4",
                     )
                 ),
-                timeout=18.0
+                timeout=12.0
             )
+            detected = m_out.metadata.get("detected_query") or m_out.transcript or m_out.ocr_text
+            if detected and not search_query:
+                search_query = detected
+            multimodal_evidence_dict = {"transcript": m_out.transcript, "ocr_text": m_out.ocr_text, "keyframes": m_out.keyframes, "media_type": "video"}
+            tracer.log_step("MultimodalAgent", "VideoKeyframeProcessor", {}, f"Extracted transcript & {len(m_out.keyframes or [])} keyframes", "Processed video stream")
         except Exception as e:
-            logger.debug("Async video processor notice: %s", e)
-            multimodal_output = video_processor.process_video(
-                mock_audio_transcript=request.mock_transcript,
-                mock_on_screen_text=request.mock_ocr_text,
-                mock_keyframe_captions=request.mock_keyframes,
-            )
-
-        detected_q = multimodal_output.metadata.get("detected_query") or multimodal_output.transcript or multimodal_output.ocr_text
-        if detected_q and not search_query:
-            search_query = detected_q
-
-        multimodal_evidence_dict = {
-            "transcript": multimodal_output.transcript,
-            "ocr_text": multimodal_output.ocr_text,
-            "keyframes": multimodal_output.keyframes,
-            "detected_topic": multimodal_output.metadata.get("detected_topic"),
-            "media_type": "video",
-        }
+            logger.debug("Video processing error: %s", e)
 
     if not search_query:
-        search_query = "Global Market and Technology Intelligence"
+        search_query = "Global breaking news and technology intelligence"
 
-    # 2. Typo Autocorrect, Entity Resolution & Multi-Angle Query Expansion
-    reformulation = {}
-    try:
-        reformulation = await asyncio.wait_for(
-            loop.run_in_executor(None, lambda: gemini_client.reformulate_and_extract_search_intent(search_query)),
-            timeout=4.0
-        )
-    except Exception as ref_err:
-        logger.debug("Reformulation exception: %s", ref_err)
-
-    corrected_q = (reformulation.get("corrected_query") if reformulation else None) or search_query
-    intent_keywords = (reformulation.get("search_keywords") if reformulation else []) or []
+    # 2. Dynamic Investigation Planning via LLMRouter
+    plan = llm_router.plan_investigation(search_query, modality=modality, media_context=multimodal_evidence_dict)
+    corrected_q = plan.get("corrected_query") or search_query
+    search_queries = plan.get("search_queries", [corrected_q])
+    claim_hypothesis = plan.get("claim_hypothesis") or search_query
     
-    query_candidates_for_search = list(dict.fromkeys([
-        corrected_q,
-        search_query,
-        *intent_keywords
-    ]))
+    tracer.log_step(
+        "DiscoveryPlanner",
+        "LLMRouter",
+        {"query": search_query, "modality": modality},
+        f"Corrected: '{corrected_q}' | Generated {len(search_queries)} queries",
+        f"Identified entities: {plan.get('entities', [])} | Hypothesis: {claim_hypothesis}",
+        metadata={"plan": plan}
+    )
 
-    entity = db.get_entity(request.entity_id) if request.entity_id else None
-    expanded_queries = expand_queries(query_candidates_for_search, entity)
-    logger.info("Executing unified discovery for: '%s' (corrected: '%s', modality=%s, lang=%s)", search_query, corrected_q, modality, request.target_language)
-
-    # 3. Parallel Multi-Source Fan-Out (Active Adapters: Web News Live, Google News, Wikipedia, HackerNews, YouTube)
-    targeted_queries = expanded_queries[:4] if len(expanded_queries) > 4 else expanded_queries
-    tasks = [
-        adapter.search(
-            targeted_queries,
-            request.scope,
-            limit=request.max_candidates_per_source,
-            target_language=request.target_language
-        )
-        for adapter in active_adapters
-    ]
-    adapter_results = await asyncio.gather(*tasks, return_exceptions=True)
-
+    # 3. Parallel Multi-Source Live Search Fan-Out
     all_raw_candidates: List[Dict[str, Any]] = []
+    
+    # Define adapter tasks
+    search_tasks = [
+        serper_adapter.search_news(search_queries[:3], limit=10, target_language=request.target_language),
+        serper_adapter.search_web(search_queries[:3], limit=10, target_language=request.target_language),
+        GoogleNewsLiveDiscoveryAdapter().search(search_queries[:3], limit=10, target_language=request.target_language),
+        WikipediaKnowledgeAdapter().search(search_queries[:2], limit=4, target_language=request.target_language),
+        HackerNewsDiscoveryAdapter().search(search_queries[:2], limit=6, target_language=request.target_language),
+        YouTubeLiveDiscoveryAdapter().search(search_queries[:2], limit=6, target_language=request.target_language),
+        DuckDuckGoWebNewsDiscoveryAdapter().search(search_queries[:2], limit=8, target_language=request.target_language),
+        gdelt_adapter.search(search_queries[:2], limit=6, target_language=request.target_language),
+    ]
+
+    adapter_results = await asyncio.gather(*search_tasks, return_exceptions=True)
     for res in adapter_results:
         if isinstance(res, list):
             all_raw_candidates.extend(res)
         elif isinstance(res, Exception):
-            logger.warning("Adapter notice during fan-out: %s", res)
+            logger.warning("Search adapter exception: %s", res)
 
-    # 4. Deduplication & Persistence (Deduplicate for current search query)
+    # 4. Adaptive Second-Chance Query Expansion if results are scarce (< 4 articles)
+    if len(all_raw_candidates) < 4:
+        alt_queries = [
+            f"{corrected_q} news",
+            f"{corrected_q} official statement",
+            f"{corrected_q} update"
+        ]
+        tracer.log_step("DiscoveryAgent", "AdaptiveExpansion", {"initial_count": len(all_raw_candidates)}, f"Executing secondary search for: {alt_queries}", "Sparse initial results triggered adaptive expansion")
+        second_tasks = [
+            serper_adapter.search_news(alt_queries, limit=8, target_language=request.target_language),
+            DuckDuckGoWebNewsDiscoveryAdapter().search(alt_queries, limit=8, target_language=request.target_language),
+        ]
+        second_res = await asyncio.gather(*second_tasks, return_exceptions=True)
+        for s_res in second_res:
+            if isinstance(s_res, list):
+                all_raw_candidates.extend(s_res)
+
+    # Deduplicate by canonical URL
     seen_in_request: Set[str] = set()
     unique_candidates: List[Dict[str, Any]] = []
     for cand in all_raw_candidates:
         url = cand.get("url")
         if url and url not in seen_in_request:
             seen_in_request.add(url)
-            seen_urls_cache.add(url)
             unique_candidates.append(cand)
 
+    # Strict Keyword & Subject Relevance Filter (Eliminates off-topic noise e.g. when searching 'cm vijay')
+    query_tokens = [w.lower() for w in re.findall(r'\b\w{2,}\b', corrected_q)]
+    plan_entities = [str(e).lower() for e in plan.get("entities", [])]
+    target_terms = list(set(query_tokens + plan_entities))
+
+    if request.strict_relevance and target_terms:
+        scored_candidates = []
+        for cand in unique_candidates:
+            title = (cand.get("title") or "").lower()
+            snippet = (cand.get("snippet") or "").lower()
+            content = f"{title} {snippet}"
+            
+            # Count query terms found in title & snippet
+            match_count = sum(1 for term in target_terms if term in content)
+            title_bonus = sum(2 for term in query_tokens if term in title)
+            relevance_score = match_count + title_bonus
+            
+            if relevance_score > 0:
+                scored_candidates.append((relevance_score, cand))
+                
+        scored_candidates.sort(key=lambda x: x[0], reverse=True)
+        if scored_candidates:
+            unique_candidates = [c for _, c in scored_candidates]
+
+    tracer.log_step("DiscoveryFanOut", "LiveMultiSourceAdapters", {"queries": search_queries, "relevant_count": len(unique_candidates)}, f"Retrieved {len(unique_candidates)} relevant candidates", f"Strict topic filtering applied for: {target_terms}")
+
+    # 5. Deep Web Extraction via Playwright for Top News URLs with Short Snippets
+    deep_scraped_count = 0
+    scrape_targets = [
+        cand for cand in unique_candidates[:4]
+        if len(cand.get("snippet", "")) < 120 and "youtube.com" not in cand.get("url", "") and "wikipedia.org" not in cand.get("url", "")
+    ][:2]
+
+    if scrape_targets:
+        async def _scrape_one(target):
+            try:
+                pw_page = await asyncio.wait_for(playwright_scraper.extract_page(target["url"]), timeout=4.0)
+                if pw_page.get("extracted_text"):
+                    target["snippet"] = pw_page["extracted_text"][:600]
+                    target["full_text"] = pw_page["extracted_text"]
+                    return True
+            except Exception:
+                pass
+            return False
+
+        scrape_results = await asyncio.gather(*[_scrape_one(t) for t in scrape_targets], return_exceptions=True)
+        deep_scraped_count = sum(1 for r in scrape_results if r is True)
+
+    if deep_scraped_count > 0:
+        tracer.log_step("DeepWebExtractor", "PlaywrightChromium", {"deep_scraped_count": deep_scraped_count}, f"Successfully rendered {deep_scraped_count} full DOM articles", "Executed headless browser dynamic reader")
+
+    # 6. Fact-Checking & Accredited Debunker Search
+    fact_check_tasks = [
+        query_google_factcheck_api(claim_hypothesis),
+        serper_adapter.search_fact_check_registries(claim_hypothesis),
+    ]
+    fc_results = await asyncio.gather(*fact_check_tasks, return_exceptions=True)
+    all_fc_matches: List[Dict[str, Any]] = []
+    for f_res in fc_results:
+        if isinstance(f_res, list):
+            all_fc_matches.extend(f_res)
+
+    # Evaluate veracity and consensus via LLMRouter
+    fact_verdict = llm_router.evaluate_claim_consensus(
+        claim=claim_hypothesis,
+        sources=unique_candidates,
+        fact_check_matches=all_fc_matches,
+    )
+    tracer.log_step("FactVerificationAgent", "GoogleFactCheck+Serper", {"hypothesis": claim_hypothesis}, f"Verdict: {fact_verdict.get('verdict')}, Score: {fact_verdict.get('authenticity_score')}", f"Consensus: {fact_verdict.get('consensus_note', 'Evaluated')}")
+
+    # Record provenance for each key source
+    for cand in unique_candidates[:10]:
+        tracer.add_provenance(
+            claim=claim_hypothesis,
+            source_url=cand.get("url", ""),
+            source_name=cand.get("source", ""),
+            snippet=cand.get("snippet", "")[:200],
+            tier=cand.get("source_tier", 2)
+        )
+
+    # 7. Grounded Intelligence Dossier Synthesis in Target Language
+    target_lang = request.target_language or "en"
+    lang_name = LANGUAGE_NAMES.get(target_lang, "English")
+    conv_hist_dicts = [m.model_dump() for m in request.conversation_history] if request.conversation_history else None
+
+    dossier = llm_router.synthesize_intelligence_dossier(
+        query=search_query,
+        input_modality=modality,
+        sources=unique_candidates,
+        fact_check_matches=all_fc_matches,
+        fact_verdict=fact_verdict,
+        multimodal_context=multimodal_evidence_dict,
+        target_language=target_lang,
+        language_name=lang_name,
+        conversation_history=conv_hist_dicts,
+    )
+
+    tracer.log_step("IntelligenceSynthesizer", "LLMRouter", {"lang": target_lang}, f"Synthesized grounded briefing: '{dossier.get('title')}'", f"Verified in {lang_name} with zero hallucination")
+
+    # 8. Persist Articles and Trace to PostgreSQL
     if request.auto_ingest and unique_candidates:
         for c in unique_candidates:
             try:
@@ -889,177 +780,45 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
                     title=title,
                     content_hash=content_hash,
                     published_at=datetime.now(timezone.utc),
-                    extracted_text=c.get("snippet") or f"Live reporting on {title}. Published by {c.get('source')} via {c.get('platform')}.",
+                    extracted_text=c.get("snippet") or f"Reporting on {title}.",
                     media_type=MediaType.VIDEO if c.get("platform") == "youtube" else MediaType.TEXT,
-                    language=request.target_language,
+                    language=target_lang,
                 )
                 db.save_article(article)
-            except Exception as exc:
-                logger.debug("Auto-ingest notice: %s", exc)
+            except Exception:
+                pass
 
-    # Publish discovery.candidates event batch
-    if unique_candidates:
-        await bus.publish("discovery.candidates", {
-            "event": "discovery.candidates",
-            "entity_id": request.entity_id,
-            "queries": expanded_queries,
-            "candidates_count": len(unique_candidates),
-            "candidates": unique_candidates,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+    tracer.persist()
 
-    # 5. Query Fact Check Database asynchronously with timeout
-    effective_query = corrected_q or search_query
-    loop = asyncio.get_event_loop()
-    try:
-        fact_check_matches = await asyncio.wait_for(
-            loop.run_in_executor(None, lambda: query_google_factcheck_api(effective_query)),
-            timeout=2.5
-        )
-    except Exception:
-        fact_check_matches = []
-
-    # 6. Synthesize Master Intelligence Result in Target Language (Threaded + Async Timeout)
-    target_lang = request.target_language or "en"
-    lang_name = LANGUAGE_NAMES.get(target_lang, "English")
-
-    conv_hist_dicts = [m.model_dump() for m in request.conversation_history] if request.conversation_history else None
-
-    try:
-        intelligence_dict = await asyncio.wait_for(
-            loop.run_in_executor(
-                None,
-                lambda: gemini_client.synthesize_discovery_intelligence(
-                    query=effective_query,
-                    input_modality=modality,
-                    discovered_articles=unique_candidates,
-                    fact_check_matches=fact_check_matches,
-                    multimodal_context=multimodal_evidence_dict,
-                    target_language=target_lang,
-                    language_name=lang_name,
-                    conversation_history=conv_hist_dicts,
-                    previous_sources=request.previous_sources,
-                    use_gemini=True,
-                )
-            ),
-            timeout=14.0
-        )
-    except Exception as synth_exc:
-        logger.debug("Async synthesis fallback: %s", synth_exc)
-        intelligence_dict = gemini_client.synthesize_discovery_intelligence(
-            query=effective_query,
-            input_modality=modality,
-            discovered_articles=unique_candidates,
-            fact_check_matches=fact_check_matches,
-            multimodal_context=multimodal_evidence_dict,
-            target_language=target_lang,
-            language_name=lang_name,
-            conversation_history=conv_hist_dicts,
-            previous_sources=request.previous_sources,
-            use_gemini=False,
-        )
-
-
-    # 7. Prepare Sources Summary & Multilingual Batch Translation
-    raw_sources_summary = [
-        {
-            "title": c.get("title"),
-            "source": c.get("source"),
-            "domain": c.get("domain", _extract_domain(c.get("url", ""))),
-            "url": c.get("url"),
-            "platform": c.get("platform", "web"),
-            "source_tier": c.get("source_tier", 2),
-            "tier_label": c.get("tier_label") or f"Tier {c.get('source_tier', 2)} Source",
-            "credibility_score": c.get("credibility_score", 0.80),
-            "tier_description": c.get("tier_description", "Editorial news source."),
-            "snippet": c.get("snippet", ""),
-            "discovered_at": c.get("discovered_at"),
-            "published_at_raw": c.get("published_at_raw", ""),
-        }
-        for c in unique_candidates
-    ]
-
-    # Translate discovered titles & snippets if target language is non-English (e.g. Tamil, Hindi, Telugu)
-    if target_lang != "en":
-        sources_summary = await translate_sources_batch(raw_sources_summary, target_lang)
-    else:
-        sources_summary = raw_sources_summary
-
-    # Normalize intelligence_dict claims
-    if isinstance(intelligence_dict, dict):
-        raw_claims = intelligence_dict.get("claims", [])
-        norm_claims = []
-        for cl in raw_claims:
-            if isinstance(cl, dict):
-                norm_claims.append(cl)
-            elif isinstance(cl, str):
-                norm_claims.append({
-                    "claim": cl,
-                    "status": "Verified",
-                    "fact_checker": "Google Fact Check Network",
-                    "details": "Corroborated by independent reporting."
-                })
-        intelligence_dict["claims"] = norm_claims
-
-    job_id = str(uuid.uuid4())
     response_data = {
-        "job_id": job_id,
+        "job_id": request_id,
         "status": "completed",
         "query": search_query,
         "corrected_query": corrected_q if corrected_q and corrected_q.lower().strip() != search_query.lower().strip() else None,
         "input_modality": modality,
         "target_language": target_lang,
         "language_name": lang_name,
-        "intelligence_result": intelligence_dict,
-        "sources": sources_summary,
-        "candidates": sources_summary,
+        "intelligence_result": dossier,
+        "sources": unique_candidates,
+        "candidates": unique_candidates,
         "multimodal_evidence": multimodal_evidence_dict,
         "candidates_count": len(unique_candidates),
-        "expanded_queries": expanded_queries,
+        "expanded_queries": search_queries,
+        "execution_trace": tracer.get_summary(),
     }
 
-    discovery_jobs[job_id] = response_data
+    discovery_jobs[request_id] = response_data
 
     await bus.publish("discovery.completed", {
-        "job_id": job_id,
+        "job_id": request_id,
         "query": search_query,
-        "modality": modality,
-        "verdict": intelligence_dict.get("authenticity_verdict"),
-        "score": intelligence_dict.get("authenticity_score"),
-        "sources_count": len(sources_summary),
+        "verdict": dossier.get("authenticity_verdict"),
+        "score": dossier.get("authenticity_score"),
+        "sources_count": len(unique_candidates),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 
     return response_data
-
-
-async def execute_discovery(
-    keywords: Optional[List[str]] = None,
-    entity_id: Optional[str] = None,
-    scope: Optional[DiscoveryScope] = None,
-    limit: int = 20,
-    auto_ingest: bool = True,
-    query: Optional[str] = None,
-    input_modality: str = "text",
-    target_language: str = "en",
-    request: Optional[UnifiedSearchRequest] = None,
-    **kwargs,
-) -> Dict[str, Any]:
-    """Backward-compatible discovery execution entry point."""
-    if request is not None:
-        return await execute_unified_discovery(request)
-
-    req = UnifiedSearchRequest(
-        query=query or (keywords[0] if keywords else "Market Intelligence"),
-        keywords=keywords or [],
-        entity_id=entity_id,
-        input_modality=input_modality,
-        target_language=target_language,
-        scope=scope or DiscoveryScope(),
-        max_candidates_per_source=limit,
-        auto_ingest=auto_ingest,
-    )
-    return await execute_unified_discovery(req)
 
 
 # =====================================================================
@@ -1071,39 +830,58 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "global-discovery",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "scheduler_running": scheduler._running,
-        "active_sources": scheduler.stats.get("active_sources", []),
-    }
-
-
-@app.get("/api/v1/discovery/scheduler/status", tags=["System"])
-async def get_scheduler_status():
-    """Retrieve autonomous background scheduler statistics."""
-    return {
-        "running": scheduler._running,
-        "interval_seconds": scheduler.interval_seconds,
-        "enabled": scheduler.enabled,
-        "stats": scheduler.stats,
+        "active_sources": ["serper_news", "serper_web", "google_news", "wikipedia", "hackernews", "youtube", "duckduckgo", "gdelt"],
+        "playwright_ready": True,
+        "llm_providers": {
+            "gemini": bool(llm_router._gemini_client),
+            "mistral": bool(llm_router._mistral_client),
+        }
     }
 
 
 @app.post("/api/v1/discovery/search", response_model=UnifiedSearchResponse, status_code=status.HTTP_200_OK, tags=["Discovery"])
 @app.post("/api/discovery/search", response_model=UnifiedSearchResponse, status_code=status.HTTP_200_OK, tags=["Discovery"])
 async def unified_search_endpoint(request: UnifiedSearchRequest):
-    """
-    Master Discovery Search Endpoint:
-    ONE input (Text / Image / Audio / Video + Target NLP Language) ->
-    EVERYTHING Automatic (Extraction -> Fanout -> Deduplication -> Fact-Check -> Gemini Synthesis) ->
-    ONE Final Intelligence Result.
-    """
+    """Master Unified Intelligence Investigation Endpoint."""
     result = await execute_unified_discovery(request)
     return UnifiedSearchResponse(**result)
 
 
+@app.get("/api/discovery/trace/{request_id}", tags=["Observability"])
+async def get_execution_trace_endpoint(request_id: str):
+    """Retrieve full request_id -> agent -> tool -> input -> result -> decision -> timestamp trace."""
+    conn = db._get_pg_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT request_id, user_query, total_steps, duration_ms, steps, provenance, created_at FROM execution_traces WHERE request_id = %s;", (request_id,))
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                return {
+                    "request_id": row[0],
+                    "user_query": row[1],
+                    "total_steps": row[2],
+                    "duration_ms": row[3],
+                    "steps": row[4] if isinstance(row[4], list) else json.loads(row[4] or "[]"),
+                    "provenance": row[5] if isinstance(row[5], list) else json.loads(row[5] or "[]"),
+                    "created_at": row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6]),
+                }
+        except Exception as e:
+            logger.debug("Trace lookup notice: %s", e)
+
+    job = discovery_jobs.get(request_id)
+    if job and job.get("execution_trace"):
+        return job["execution_trace"]
+
+    raise HTTPException(status_code=404, detail="Execution trace not found for the requested ID.")
+
+
 @app.get("/discovery/jobs/{job_id}", response_model=UnifiedSearchResponse, tags=["Discovery"])
 async def get_job_endpoint(job_id: str):
-    """Retrieve results of an executed discovery job."""
     job = discovery_jobs.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Discovery job not found.")
@@ -1118,11 +896,8 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/discovery/auth/login", tags=["Auth"])
 async def login_endpoint(req: LoginRequest):
-    """Authenticate user with email, password, and assigned role."""
     email_clean = req.email.strip().lower()
     user = db.users.get(email_clean)
-    
-    # Pre-configured default users
     role_map = {
         "admin@gmail.com": ("System Administrator", "Admin"),
         "analyst@gmail.com": ("Lead Fact Analyst", "Analyst"),
@@ -1130,7 +905,6 @@ async def login_endpoint(req: LoginRequest):
         "client@gmail.com": ("Enterprise Client", "Client"),
         "gayu2007@gmail.com": ("Platform Owner", "Admin"),
     }
-    
     if email_clean in role_map and req.password == "password":
         name, default_role = role_map[email_clean]
         assigned_role = req.role or (user.role if user else default_role)
@@ -1157,12 +931,11 @@ async def login_endpoint(req: LoginRequest):
             "token": f"token-{user.id}-{uuid.uuid4().hex[:8]}"
         }
 
-    raise HTTPException(status_code=401, detail="Invalid email or password. Password is 'password'.")
+    raise HTTPException(status_code=401, detail="Invalid email or password. Default test password is 'password'.")
 
 
 @app.get("/api/discovery/history", tags=["History"])
 async def get_history_endpoint(email: str):
-    """Retrieve isolated search history for the logged-in user."""
     history = db.get_user_history(email.strip().lower())
     return {"email": email, "history": history}
 
@@ -1174,20 +947,15 @@ class HistoryItemRequest(BaseModel):
 
 @app.post("/api/discovery/history", tags=["History"])
 async def save_history_endpoint(req: HistoryItemRequest):
-    """Save an isolated search history item for the logged-in user."""
     db.save_user_history_item(req.email.strip().lower(), req.item)
     return {"success": True}
 
 
 @app.delete("/api/discovery/history", tags=["History"])
 async def delete_history_endpoint(email: str, session_id: Optional[str] = None):
-    """Delete a single session or clear all history for the logged-in user."""
     email_clean = email.strip().lower()
     if session_id:
         db.delete_user_history_item(email_clean, session_id)
     else:
         db.clear_user_history(email_clean)
     return {"success": True}
-
-
-

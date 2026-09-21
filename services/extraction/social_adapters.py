@@ -1,5 +1,5 @@
 """
-VeriScope Social Platform Adapters
+Discovery Social Platform Adapters
 Compliant with PRD Section 7.2, 8.2 & TRD Section 3, 5.2 (Official APIs only)
 
 Supported Platforms:
@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from services.common.models import MediaType, SocialPost
 
-logger = logging.getLogger("veriscope.social_adapters")
+logger = logging.getLogger("discovery.social_adapters")
 
 
 class NormalizedSocialContent(BaseModel):

@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 4 Multilingual Processing Service
+Unit Tests for Discovery Phase 4 Multilingual Processing Service
 Compliant with PRD Section 7.3, 8.4 & TRD Section 5.3
 """
 

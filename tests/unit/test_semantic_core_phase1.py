@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 1 Semantic Core
+Unit Tests for Discovery Phase 1 Semantic Core
 Tests: Entity Profile Generation, Edit-Precedence Lock, Semantic Shortlisting, and Confidence Routing
 """
 

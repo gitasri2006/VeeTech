@@ -1,4 +1,4 @@
-# VeriScope Public Verification Bot Agent (WhatsApp)
+# Discovery Public Verification Bot Agent (WhatsApp)
 
 ## Overview
 The **Public Verification Bot Agent** (`services/whatsapp-bot/`) provides a public-facing WhatsApp interface for one-off content verification (Pipeline B) adhering to PRD Section 7.10, Section 8.6, and TRD Section 5.10.

@@ -1,5 +1,5 @@
 """
-VeriScope Multimodal Processing Sub-Modules
+Discovery Multimodal Processing Sub-Modules
 Compliant with PRD Section 7.2, 8.3 & TRD Section 3, 5.2
 
 Sub-modules:
@@ -19,7 +19,7 @@ import uuid
 
 from services.common.models import MediaType, MediaAsset
 
-logger = logging.getLogger("veriscope.multimodal")
+logger = logging.getLogger("discovery.multimodal")
 
 
 def _get_genai_client():

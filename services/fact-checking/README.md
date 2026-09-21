@@ -1,6 +1,6 @@
-# VeriScope Fact-Checking & Authenticity Agent
+# Discovery Fact-Checking & Authenticity Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.7, 8.5** and **TRD Section 5.7**.
 
 ## Capabilities

@@ -1,5 +1,5 @@
 """
-VeriScope Common Package
+Discovery Common Package
 """
 from services.common.models import *
 from services.common.db import db, DatabaseRepository, cosine_similarity

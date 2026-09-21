@@ -1,14 +1,15 @@
 """
-VeriScope Database and Vector Storage Repository
-Compliant with TRD Section 6 (PostgreSQL 16 + pgvector) with live PostgreSQL persistence & in-memory cache
+Discovery Database and Vector Storage Repository
+Compliant with TRD Section 6 (PostgreSQL 16 + pgvector) with full live PostgreSQL persistence & in-memory cache
 """
+from datetime import datetime, timezone
 import json
 import logging
 import math
 import os
 from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime, timezone
 import urllib.parse
+import uuid
 
 from services.common.models import (
     Entity, Rule, Article, MediaAsset, SocialPost, LanguageTag,
@@ -16,7 +17,7 @@ from services.common.models import (
     Alert, User, AuditLogEntry, Brief, ValidationStatus, FactCheckVerdict, MediaType
 )
 
-logger = logging.getLogger("veriscope.db")
+logger = logging.getLogger("discovery.db")
 
 
 def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
@@ -52,11 +53,25 @@ class DatabaseRepository:
         self.audit_logs: List[AuditLogEntry] = []
         self.briefs: Dict[str, Brief] = {}
         self.article_embeddings: Dict[str, List[float]] = {}
-        
         self.user_history: Dict[str, List[Dict[str, Any]]] = {}
-        self.pg_conn = None
+
+        self._load_dotenv_if_needed()
         self._init_postgres()
         self._init_default_data()
+
+    def _load_dotenv_if_needed(self):
+        try:
+            repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            dotenv_path = os.path.join(repo_root, ".env")
+            if os.path.exists(dotenv_path):
+                with open(dotenv_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+        except Exception:
+            pass
 
     def _get_pg_connection(self):
         try:
@@ -65,7 +80,7 @@ class DatabaseRepository:
             port = int(os.getenv("POSTGRES_PORT", "5432"))
             dbname = os.getenv("POSTGRES_DB", "discovery")
             user = os.getenv("POSTGRES_USER", "postgres")
-            password = os.getenv("POSTGRES_PASSWORD", "Gayu@300116")
+            password = os.getenv("POSTGRES_PASSWORD", "root123")
             conn = psycopg2.connect(
                 host=host,
                 port=port,
@@ -76,7 +91,7 @@ class DatabaseRepository:
             )
             return conn
         except Exception as e:
-            logger.warning("PostgreSQL connection error: %s", e)
+            logger.debug("PostgreSQL connection notice: %s", e)
             return None
 
     def _init_postgres(self):
@@ -88,7 +103,6 @@ class DatabaseRepository:
                 cur.execute("SELECT COUNT(*) FROM articles;")
                 count = cur.fetchone()[0]
                 logger.info("Connected to live PostgreSQL 'discovery' database. Existing articles count: %d", count)
-                # Create user search history table if it doesn't exist
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS user_search_history (
                         id VARCHAR(64) PRIMARY KEY,
@@ -96,6 +110,15 @@ class DatabaseRepository:
                         title VARCHAR(500) NOT NULL,
                         timestamp VARCHAR(64),
                         messages JSONB DEFAULT '[]'::jsonb,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE TABLE IF NOT EXISTS execution_traces (
+                        request_id VARCHAR(64) PRIMARY KEY,
+                        user_query TEXT,
+                        total_steps INT,
+                        duration_ms INT,
+                        steps JSONB,
+                        provenance JSONB,
                         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
@@ -118,30 +141,9 @@ class DatabaseRepository:
             self.users[email] = u
             self.users[u_id] = u
 
-        default_tiers = [
-            ("reuters.com", "web", 1, 0.95),
-            ("apnews.com", "web", 1, 0.95),
-            ("bbc.com", "web", 1, 0.92),
-            ("thehindu.com", "web", 1, 0.90),
-            ("indianexpress.com", "web", 1, 0.90),
-            ("ndtv.com", "web", 2, 0.78),
-            ("timesofindia.indiatimes.com", "web", 2, 0.75),
-            ("altnews.in", "web", 1, 0.95),
-            ("boomlive.in", "web", 1, 0.95),
-            ("pib.gov.in", "web", 1, 0.98),
-            ("unverified-blog.xyz", "web", 3, 0.30),
-            ("daily-clickbait.net", "web", 3, 0.20),
-        ]
-        for domain, platform, tier, score in default_tiers:
-            self.source_tiers[domain] = SourceTier(
-                domain_or_handle=domain,
-                platform=platform,
-                tier=tier,
-                credibility_score=score,
-                analyst_locked=True
-            )
-
-    # Entity methods
+    # -----------------------------------------------------------------
+    # Entity Methods
+    # -----------------------------------------------------------------
     def save_entity(self, entity: Entity) -> Entity:
         self.entities[entity.id] = entity
         conn = self._get_pg_connection()
@@ -234,7 +236,9 @@ class DatabaseRepository:
                 logger.debug("PostgreSQL list_entities notice: %s", e)
         return list(self.entities.values())
 
-    # Rule methods
+    # -----------------------------------------------------------------
+    # Rule Methods
+    # -----------------------------------------------------------------
     def save_rule(self, rule: Rule) -> Rule:
         self.rules[rule.id] = rule
         conn = self._get_pg_connection()
@@ -303,12 +307,91 @@ class DatabaseRepository:
                 logger.debug("PostgreSQL get_rule_by_entity notice: %s", e)
         return None
 
+    def get_rule(self, rule_id: str) -> Optional[Rule]:
+        if rule_id in self.rules:
+            return self.rules[rule_id]
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id, entity_id, group_id, geo_filter, domain_rules, recency_window, boolean_terms, language_filter, min_source_tier, priority, version, natural_language FROM rules WHERE id = %s;", (rule_id,))
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+                if row:
+                    rule = Rule(
+                        id=row[0],
+                        entity_id=row[1],
+                        group_id=row[2],
+                        geo_filter=row[3] if isinstance(row[3], dict) else json.loads(row[3] or "{}"),
+                        domain_rules=row[4] if isinstance(row[4], dict) else json.loads(row[4] or "{}"),
+                        recency_window=row[5] or "30d",
+                        boolean_terms=row[6] if isinstance(row[6], dict) else json.loads(row[6] or "{}"),
+                        language_filter=row[7] if isinstance(row[7], dict) else json.loads(row[7] or "{}"),
+                        min_source_tier=row[8] or 3,
+                        priority=row[9] or 1,
+                        version=row[10] or 1,
+                        natural_language=row[11]
+                    )
+                    self.rules[rule.id] = rule
+                    return rule
+            except Exception as e:
+                logger.debug("PostgreSQL get_rule notice: %s", e)
+        return None
+
     def list_rules(self) -> List[Rule]:
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id, entity_id, group_id, geo_filter, domain_rules, recency_window, boolean_terms, language_filter, min_source_tier, priority, version, natural_language FROM rules ORDER BY created_at DESC;")
+                rows = cur.fetchall()
+                cur.close()
+                conn.close()
+                results = []
+                for row in rows:
+                    rule = Rule(
+                        id=row[0],
+                        entity_id=row[1],
+                        group_id=row[2],
+                        geo_filter=row[3] if isinstance(row[3], dict) else json.loads(row[3] or "{}"),
+                        domain_rules=row[4] if isinstance(row[4], dict) else json.loads(row[4] or "{}"),
+                        recency_window=row[5] or "30d",
+                        boolean_terms=row[6] if isinstance(row[6], dict) else json.loads(row[6] or "{}"),
+                        language_filter=row[7] if isinstance(row[7], dict) else json.loads(row[7] or "{}"),
+                        min_source_tier=row[8] or 3,
+                        priority=row[9] or 1,
+                        version=row[10] or 1,
+                        natural_language=row[11]
+                    )
+                    self.rules[rule.id] = rule
+                    results.append(rule)
+                if results:
+                    return results
+            except Exception as e:
+                logger.debug("PostgreSQL list_rules notice: %s", e)
         return list(self.rules.values())
 
-    # Article methods
+    def delete_rule(self, rule_id: str) -> bool:
+        if rule_id in self.rules:
+            del self.rules[rule_id]
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("DELETE FROM rules WHERE id = %s;", (rule_id,))
+                conn.commit()
+                cur.close()
+                conn.close()
+                return True
+            except Exception as e:
+                logger.debug("PostgreSQL delete_rule notice: %s", e)
+        return True
+
+    # -----------------------------------------------------------------
+    # Article Methods
+    # -----------------------------------------------------------------
     def save_article(self, article: Article) -> Article:
-        # Check if canonical_url exists in memory
         existing_id = None
         for a_id, a in self.articles.items():
             if a.canonical_url == article.canonical_url:
@@ -356,6 +439,37 @@ class DatabaseRepository:
                 logger.debug("PostgreSQL save_article notice: %s", e)
         return article
 
+    def get_article(self, article_id: str) -> Optional[Article]:
+        if article_id in self.articles:
+            return self.articles[article_id]
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id, canonical_url, source, source_tier, title, author, published_at, language, media_type, extracted_text, content_hash FROM articles WHERE id = %s;", (article_id,))
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+                if row:
+                    art = Article(
+                        id=row[0],
+                        canonical_url=row[1],
+                        source=row[2],
+                        source_tier=row[3],
+                        title=row[4],
+                        author=row[5],
+                        published_at=row[6],
+                        language=row[7],
+                        media_type=MediaType(row[8]) if row[8] in [m.value for m in MediaType] else MediaType.TEXT,
+                        extracted_text=row[9],
+                        content_hash=row[10]
+                    )
+                    self.articles[art.id] = art
+                    return art
+            except Exception as e:
+                logger.debug("PostgreSQL get_article notice: %s", e)
+        return None
+
     def get_article_by_url(self, url: str) -> Optional[Article]:
         for art in self.articles.values():
             if art.canonical_url == url:
@@ -386,37 +500,6 @@ class DatabaseRepository:
                     return art
             except Exception as e:
                 logger.debug("PostgreSQL get_article_by_url notice: %s", e)
-        return None
-
-    def get_article(self, article_id: str) -> Optional[Article]:
-        if article_id in self.articles:
-            return self.articles[article_id]
-        conn = self._get_pg_connection()
-        if conn:
-            try:
-                cur = conn.cursor()
-                cur.execute("SELECT id, canonical_url, source, source_tier, title, author, published_at, language, media_type, extracted_text, content_hash FROM articles WHERE id = %s;", (article_id,))
-                row = cur.fetchone()
-                cur.close()
-                conn.close()
-                if row:
-                    art = Article(
-                        id=row[0],
-                        canonical_url=row[1],
-                        source=row[2],
-                        source_tier=row[3],
-                        title=row[4],
-                        author=row[5],
-                        published_at=row[6],
-                        language=row[7],
-                        media_type=MediaType(row[8]) if row[8] in [m.value for m in MediaType] else MediaType.TEXT,
-                        extracted_text=row[9],
-                        content_hash=row[10]
-                    )
-                    self.articles[art.id] = art
-                    return art
-            except Exception as e:
-                logger.debug("PostgreSQL get_article notice: %s", e)
         return None
 
     def get_article_by_hash(self, content_hash: str) -> Optional[Article]:
@@ -483,10 +566,195 @@ class DatabaseRepository:
                 logger.debug("PostgreSQL list_articles notice: %s", e)
         return list(self.articles.values())
 
+    # -----------------------------------------------------------------
+    # Fact-Checking Methods
+    # -----------------------------------------------------------------
+    def save_fact_check(self, fc: FactCheckResult) -> FactCheckResult:
+        self.fact_checks[fc.article_id] = fc
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                verdict_val = fc.verdict.value if hasattr(fc.verdict, "value") else str(fc.verdict)
+                cur.execute("""
+                    INSERT INTO fact_checks (id, article_id, authenticity_score, verdict, evidence_sources, manipulated_media_flag, needs_human_review, reviewed_by, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        authenticity_score = EXCLUDED.authenticity_score,
+                        verdict = EXCLUDED.verdict,
+                        evidence_sources = EXCLUDED.evidence_sources,
+                        needs_human_review = EXCLUDED.needs_human_review;
+                """, (
+                    fc.id,
+                    fc.article_id,
+                    fc.authenticity_score,
+                    verdict_val,
+                    json.dumps(fc.evidence_sources),
+                    fc.manipulated_media_flag,
+                    fc.needs_human_review,
+                    fc.reviewed_by
+                ))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                logger.debug("PostgreSQL save_fact_check notice: %s", e)
+        return fc
 
-    # MediaAsset & SocialPost
+    def get_fact_check(self, article_id: str) -> Optional[FactCheckResult]:
+        if article_id in self.fact_checks:
+            return self.fact_checks[article_id]
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id, article_id, authenticity_score, verdict, evidence_sources, manipulated_media_flag, needs_human_review, reviewed_by FROM fact_checks WHERE article_id = %s;", (article_id,))
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+                if row:
+                    fc = FactCheckResult(
+                        id=row[0],
+                        article_id=row[1],
+                        authenticity_score=row[2],
+                        verdict=FactCheckVerdict(row[3]) if row[3] in [v.value for v in FactCheckVerdict] else FactCheckVerdict.UNVERIFIED,
+                        evidence_sources=row[4] if isinstance(row[4], list) else json.loads(row[4] or "[]"),
+                        manipulated_media_flag=bool(row[5]),
+                        needs_human_review=bool(row[6]),
+                        reviewed_by=row[7]
+                    )
+                    self.fact_checks[article_id] = fc
+                    return fc
+            except Exception as e:
+                logger.debug("PostgreSQL get_fact_check notice: %s", e)
+        return None
+
+    def list_fact_checks_for_review(self) -> List[FactCheckResult]:
+        return [fc for fc in self.fact_checks.values() if fc.needs_human_review]
+
+    # -----------------------------------------------------------------
+    # Validation Methods
+    # -----------------------------------------------------------------
+    def save_validation(self, validation: Validation) -> Validation:
+        self.validations[validation.id] = validation
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                status_val = validation.validated_status.value if hasattr(validation.validated_status, "value") else str(validation.validated_status)
+                cur.execute("""
+                    INSERT INTO validations (id, match_id, disambiguation_confidence, sentiment, validated_status, validated_by, reason, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        disambiguation_confidence = EXCLUDED.disambiguation_confidence,
+                        validated_status = EXCLUDED.validated_status,
+                        reason = EXCLUDED.reason;
+                """, (
+                    validation.id,
+                    validation.match_id,
+                    validation.disambiguation_confidence,
+                    validation.sentiment,
+                    status_val,
+                    validation.validated_by,
+                    validation.reason
+                ))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                logger.debug("PostgreSQL save_validation notice: %s", e)
+        return validation
+
+    def get_validation_by_match(self, match_id: str) -> Optional[Validation]:
+        for v in self.validations.values():
+            if v.match_id == match_id:
+                return v
+        return None
+
+    # -----------------------------------------------------------------
+    # Match Methods
+    # -----------------------------------------------------------------
+    def save_match(self, match: Match) -> Match:
+        self.matches[match.id] = match
+        return match
+
+    def list_matches(self, entity_id: Optional[str] = None) -> List[Match]:
+        if entity_id:
+            return [m for m in self.matches.values() if m.entity_id == entity_id]
+        return list(self.matches.values())
+
+    # -----------------------------------------------------------------
+    # Brief Methods
+    # -----------------------------------------------------------------
+    def save_brief(self, brief: Brief) -> Brief:
+        self.briefs[brief.id] = brief
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO briefs (id, title, executive_summary, cluster_ids, article_ids, grounded_citations, status, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        title = EXCLUDED.title,
+                        executive_summary = EXCLUDED.executive_summary,
+                        grounded_citations = EXCLUDED.grounded_citations;
+                """, (
+                    brief.id,
+                    brief.title,
+                    brief.executive_summary,
+                    json.dumps(brief.cluster_ids),
+                    json.dumps(brief.article_ids),
+                    json.dumps(brief.grounded_citations),
+                    brief.status
+                ))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                logger.debug("PostgreSQL save_brief notice: %s", e)
+        return brief
+
+    def get_brief(self, brief_id: str) -> Optional[Brief]:
+        return self.briefs.get(brief_id)
+
+    def list_briefs(self, entity_id: Optional[str] = None) -> List[Brief]:
+        if entity_id:
+            return [b for b in self.briefs.values() if b.entity_id == entity_id]
+        return list(self.briefs.values())
+
+    # -----------------------------------------------------------------
+    # MediaAsset & SocialPost Methods
+    # -----------------------------------------------------------------
     def save_media_asset(self, asset: MediaAsset) -> MediaAsset:
         self.media_assets[asset.id] = asset
+        conn = self._get_pg_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                m_type = asset.type.value if hasattr(asset.type, "value") else str(asset.type)
+                cur.execute("""
+                    INSERT INTO media_assets (id, article_id, type, storage_ref, ocr_text, transcript, caption, keyframes)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                        ocr_text = EXCLUDED.ocr_text,
+                        transcript = EXCLUDED.transcript,
+                        caption = EXCLUDED.caption;
+                """, (
+                    asset.id,
+                    asset.article_id,
+                    m_type,
+                    asset.storage_ref,
+                    asset.ocr_text,
+                    asset.transcript,
+                    asset.caption,
+                    json.dumps(asset.keyframes)
+                ))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                logger.debug("PostgreSQL save_media_asset notice: %s", e)
         return asset
 
     def get_media_by_article(self, article_id: str) -> List[MediaAsset]:
@@ -502,7 +770,9 @@ class DatabaseRepository:
                 return sp
         return None
 
-    # LanguageTag
+    # -----------------------------------------------------------------
+    # LanguageTag Methods
+    # -----------------------------------------------------------------
     def save_language_tag(self, tag: LanguageTag) -> LanguageTag:
         self.language_tags[tag.article_id] = tag
         return tag
@@ -510,51 +780,9 @@ class DatabaseRepository:
     def get_language_tag(self, article_id: str) -> Optional[LanguageTag]:
         return self.language_tags.get(article_id)
 
-    # Vector search simulation (pgvector equivalent)
-    def save_article_embedding(self, article_id: str, embedding: List[float]):
-        self.article_embeddings[article_id] = embedding
-
-    def search_similar_articles(self, query_embedding: List[float], min_threshold: float = 0.35) -> List[Tuple[Article, float]]:
-        results = []
-        for art_id, emb in self.article_embeddings.items():
-            sim = cosine_similarity(query_embedding, emb)
-            if sim >= min_threshold and art_id in self.articles:
-                results.append((self.articles[art_id], sim))
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results
-
-    # Match & Validation
-    def save_match(self, match: Match) -> Match:
-        self.matches[match.id] = match
-        return match
-
-    def list_matches(self, entity_id: Optional[str] = None) -> List[Match]:
-        if entity_id:
-            return [m for m in self.matches.values() if m.entity_id == entity_id]
-        return list(self.matches.values())
-
-    def save_validation(self, validation: Validation) -> Validation:
-        self.validations[validation.id] = validation
-        return validation
-
-    def get_validation_by_match(self, match_id: str) -> Optional[Validation]:
-        for v in self.validations.values():
-            if v.match_id == match_id:
-                return v
-        return None
-
-    # Fact Check
-    def save_fact_check(self, fc: FactCheckResult) -> FactCheckResult:
-        self.fact_checks[fc.article_id] = fc
-        return fc
-
-    def get_fact_check(self, article_id: str) -> Optional[FactCheckResult]:
-        return self.fact_checks.get(article_id)
-
-    def list_fact_checks_for_review(self) -> List[FactCheckResult]:
-        return [fc for fc in self.fact_checks.values() if fc.needs_human_review]
-
-    # Source Tier
+    # -----------------------------------------------------------------
+    # SourceTier Methods
+    # -----------------------------------------------------------------
     def save_source_tier(self, st: SourceTier) -> SourceTier:
         self.source_tiers[st.domain_or_handle] = st
         return st
@@ -562,7 +790,9 @@ class DatabaseRepository:
     def get_source_tier(self, domain_or_handle: str) -> Optional[SourceTier]:
         return self.source_tiers.get(domain_or_handle)
 
-    # WhatsApp Query & Consent
+    # -----------------------------------------------------------------
+    # WhatsApp Queries & Consent
+    # -----------------------------------------------------------------
     def has_whatsapp_consent(self, phone_hash: str) -> bool:
         return phone_hash in self.whatsapp_consents
 
@@ -582,31 +812,37 @@ class DatabaseRepository:
     def list_pending_whatsapp_reviews(self) -> List[WhatsAppQuery]:
         return [q for q in self.whatsapp_queries.values() if q.needs_human_review and q.status == "queued_review"]
 
-    # Audit Log
+    # -----------------------------------------------------------------
+    # Alerts & Audit Logs
+    # -----------------------------------------------------------------
+    def save_alert(self, alert: Alert) -> Alert:
+        self.alerts[alert.id] = alert
+        return alert
+
     def log_audit(self, entry: AuditLogEntry):
         self.audit_logs.append(entry)
 
     def list_audit_logs(self) -> List[AuditLogEntry]:
         return sorted(self.audit_logs, key=lambda x: x.timestamp, reverse=True)
 
-    # Alerts & Briefs
-    def save_alert(self, alert: Alert) -> Alert:
-        self.alerts[alert.id] = alert
-        return alert
+    # -----------------------------------------------------------------
+    # Vector Embeddings Search
+    # -----------------------------------------------------------------
+    def save_article_embedding(self, article_id: str, embedding: List[float]):
+        self.article_embeddings[article_id] = embedding
 
-    def save_brief(self, brief: Brief) -> Brief:
-        self.briefs[brief.id] = brief
-        return brief
+    def search_similar_articles(self, query_embedding: List[float], min_threshold: float = 0.35) -> List[Tuple[Article, float]]:
+        results = []
+        for art_id, emb in self.article_embeddings.items():
+            sim = cosine_similarity(query_embedding, emb)
+            if sim >= min_threshold and art_id in self.articles:
+                results.append((self.articles[art_id], sim))
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results
 
-    def get_brief(self, brief_id: str) -> Optional[Brief]:
-        return self.briefs.get(brief_id)
-
-    def list_briefs(self, entity_id: Optional[str] = None) -> List[Brief]:
-        if entity_id:
-            return [b for b in self.briefs.values() if b.entity_id == entity_id]
-        return list(self.briefs.values())
-
+    # -----------------------------------------------------------------
     # User Search History Methods (Isolated per account)
+    # -----------------------------------------------------------------
     def get_user_history(self, user_email: str) -> List[Dict[str, Any]]:
         conn = self._get_pg_connection()
         if conn:
@@ -632,13 +868,11 @@ class DatabaseRepository:
         timestamp = item.get("timestamp", "Today")
         messages = item.get("messages", [])
 
-        # In-memory update
         if user_email not in self.user_history:
             self.user_history[user_email] = []
         filtered = [x for x in self.user_history[user_email] if x.get("id") != sess_id]
         self.user_history[user_email] = [{"id": sess_id, "title": title, "timestamp": timestamp, "messages": messages}] + filtered
 
-        # PostgreSQL update
         conn = self._get_pg_connection()
         if conn:
             try:
@@ -688,4 +922,3 @@ class DatabaseRepository:
 
 # Global repository instance
 db = DatabaseRepository()
-

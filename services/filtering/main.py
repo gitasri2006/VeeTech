@@ -1,5 +1,5 @@
 """
-VeriScope Filtering Agent (Phase 1 Semantic Core)
+Discovery Filtering Agent (Phase 1 Semantic Core)
 Compliant with PRD Section 7.5, TRD Section 5.5, and TRD Section 6
 
 Capabilities:
@@ -25,10 +25,10 @@ from services.common.models import Article, Entity, Rule, Match, MatchType
 from services.filtering.rule_evaluator import rule_evaluator, RuleEvaluationResult
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.filtering")
+logger = logging.getLogger("discovery.filtering")
 
 app = FastAPI(
-    title="VeriScope Filtering Agent",
+    title="Discovery Filtering Agent",
     description="Semantic Shortlisting, Deterministic Rule Gating, and NL Rule Compilation Service",
     version="1.0.0",
 )
@@ -254,7 +254,23 @@ async def list_rules_endpoint(entity_id: Optional[str] = Query(default=None)):
     if entity_id:
         r = db.get_rule_by_entity(entity_id)
         return [r] if r else []
-    return list(db.rules.values())
+    return db.list_rules()
+
+
+@app.get("/rules/{rule_id}", response_model=Rule, tags=["Rules"])
+async def get_rule_endpoint(rule_id: str):
+    """Get a specific rule by ID."""
+    rule = db.get_rule(rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found.")
+    return rule
+
+
+@app.delete("/rules/{rule_id}", tags=["Rules"])
+async def delete_rule_endpoint(rule_id: str):
+    """Delete a custom rule by ID."""
+    success = db.delete_rule(rule_id)
+    return {"status": "deleted", "rule_id": rule_id, "success": success}
 
 
 @app.post("/rules/sandbox", response_model=RuleSandboxResponse, tags=["Rules"])

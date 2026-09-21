@@ -1,2 +1,2 @@
-"""VeriScope Global Discovery Package"""
-from .main import app, execute_discovery, expand_queries
+"""Discovery Global Discovery Package"""
+from .main import app, execute_unified_discovery

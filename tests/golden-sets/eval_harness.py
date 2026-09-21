@@ -1,5 +1,5 @@
 """
-VeriScope Golden-Set Evaluation Harness
+Discovery Golden-Set Evaluation Harness
 Compliant with TRD Section 10 (Evaluation Strategy) and PRD Section 3 (Target Metrics)
 
 Evaluates Contextual Validation Agent against curated benchmark datasets.
@@ -22,7 +22,7 @@ from services.common.gemini_client import gemini_client
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("veriscope.eval")
+logger = logging.getLogger("discovery.eval")
 
 
 class EvaluationHarness:

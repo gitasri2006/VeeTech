@@ -1,6 +1,6 @@
-# VeriScope Multilingual Processing Service
+# Discovery Multilingual Processing Service
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.3, 8.4** and **TRD Section 5.3**.
 
 ## Capabilities

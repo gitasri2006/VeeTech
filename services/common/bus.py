@@ -1,5 +1,5 @@
 """
-VeriScope Message Bus Interface
+Discovery Message Bus Interface
 Compliant with TRD Section 3 (Redis Streams) and TRD Section 4 (Event topics)
 """
 import asyncio
@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 import os
 
-logger = logging.getLogger("veriscope.bus")
+logger = logging.getLogger("discovery.bus")
 
 
 class MessageBus:

@@ -10,6 +10,7 @@ import { StoryDetailView } from './views/StoryDetailView';
 import { MediaViewerView } from './views/MediaViewerView';
 import { EntitiesView } from './views/EntitiesView';
 import { RulesView } from './views/RulesView';
+import { SettingsView } from './views/SettingsView';
 import { FactCheckQueueView } from './views/FactCheckQueueView';
 import { WhatsAppBotView } from './views/WhatsAppBotView';
 import { ReportingView } from './views/ReportingView';
@@ -88,6 +89,8 @@ export const App: React.FC = () => {
         return <EntitiesView />;
       case 'rules':
         return <RulesView />;
+      case 'settings':
+        return <SettingsView />;
       case 'factcheck-queue':
         return <FactCheckQueueView />;
       case 'whatsapp-moderation':
@@ -112,6 +115,10 @@ export const App: React.FC = () => {
         onRefresh={() => console.log('Refreshing pipeline state')}
         showAdminSidebar={showAdminSidebar}
         onToggleAdminSidebar={() => setShowAdminSidebar(!showAdminSidebar)}
+        onOpenSettings={() => {
+          setCurrentView('settings');
+          setShowAdminSidebar(true);
+        }}
         onResetToChat={() => setCurrentView('discovery')}
         onLogout={handleLogout}
       />

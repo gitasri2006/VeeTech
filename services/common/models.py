@@ -1,5 +1,5 @@
 """
-VeriScope Common Models and Data Structures
+Discovery Common Models and Data Structures
 Compliant with TRD Section 6 (Data Model / Schema) and PRD Section 10
 """
 from datetime import datetime, timezone

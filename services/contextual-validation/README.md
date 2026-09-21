@@ -1,6 +1,6 @@
-# VeriScope Contextual Validation Agent
+# Discovery Contextual Validation Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.6**, **TRD Section 5.6**, and **TRD Section 10**.
 
 ## Capabilities

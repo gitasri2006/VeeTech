@@ -1,5 +1,5 @@
 """
-VeriScope Service Registry
+Discovery Service Registry
 Exposes all 10 agent services and submodules with clean import aliases
 """
 import importlib

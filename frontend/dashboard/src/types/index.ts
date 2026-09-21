@@ -5,6 +5,7 @@ export type ViewType =
   | 'media-viewer'
   | 'entities'
   | 'rules'
+  | 'settings'
   | 'factcheck-queue'
   | 'whatsapp-moderation'
   | 'reporting'

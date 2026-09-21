@@ -1,5 +1,5 @@
 % Technical Requirements Document — Version 1.0 (Build-Ready)
-% VeriScope — Intelligent News Discovery & Media Authentication Platform
+% Discovery — Intelligent News Discovery & Media Authentication Platform
 
 # 1. Purpose & Scope
 

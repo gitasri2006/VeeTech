@@ -3,7 +3,7 @@ version: '3.8'
 services:
   redis:
     image: redis:7-alpine
-    container_name: veriscope-redis
+    container_name: discovery-redis
     ports:
       - "6379:6379"
     volumes:
@@ -11,11 +11,11 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: veriscope-postgres
+    container_name: discovery-postgres
     environment:
-      POSTGRES_DB: veriscope
-      POSTGRES_USER: veriscope_user
-      POSTGRES_PASSWORD: veriscope_secure_password_2026
+      POSTGRES_DB: discovery
+      POSTGRES_USER: discovery_user
+      POSTGRES_PASSWORD: discovery_secure_password_2026
     ports:
       - "5432:5432"
     volumes:
@@ -25,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: services/extraction/Dockerfile
-    container_name: veriscope-extraction
+    container_name: discovery-extraction
     ports:
       - "8000:8000"
     environment:
@@ -39,7 +39,7 @@ services:
     build:
       context: .
       dockerfile: services/filtering/Dockerfile
-    container_name: veriscope-filtering
+    container_name: discovery-filtering
     ports:
       - "8001:8001"
     environment:
@@ -52,7 +52,7 @@ services:
     build:
       context: .
       dockerfile: services/entity-profile/Dockerfile
-    container_name: veriscope-entity-profile
+    container_name: discovery-entity-profile
     ports:
       - "8002:8002"
     environment:
@@ -65,7 +65,7 @@ services:
     build:
       context: .
       dockerfile: services/contextual-validation/Dockerfile
-    container_name: veriscope-contextual-validation
+    container_name: discovery-contextual-validation
     ports:
       - "8003:8003"
     environment:
@@ -78,7 +78,7 @@ services:
     build:
       context: .
       dockerfile: services/global-discovery/Dockerfile
-    container_name: veriscope-global-discovery
+    container_name: discovery-global-discovery
     ports:
       - "8004:8004"
     environment:
@@ -91,7 +91,7 @@ services:
     build:
       context: .
       dockerfile: services/multilingual/Dockerfile
-    container_name: veriscope-multilingual
+    container_name: discovery-multilingual
     ports:
       - "8005:8005"
     environment:
@@ -104,7 +104,7 @@ services:
     build:
       context: .
       dockerfile: services/fact-checking/Dockerfile
-    container_name: veriscope-fact-checking
+    container_name: discovery-fact-checking
     ports:
       - "8006:8006"
     environment:
@@ -117,7 +117,7 @@ services:
     build:
       context: .
       dockerfile: services/source-intelligence/Dockerfile
-    container_name: veriscope-source-intelligence
+    container_name: discovery-source-intelligence
     ports:
       - "8007:8007"
     environment:
@@ -130,14 +130,14 @@ services:
     build:
       context: .
       dockerfile: services/whatsapp-bot/Dockerfile
-    container_name: veriscope-whatsapp-bot
+    container_name: discovery-whatsapp-bot
     ports:
       - "8008:8008"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
-      - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-veriscope_meta_verify_token_2026}
-      - META_APP_SECRET=${META_APP_SECRET:-veriscope_meta_app_secret_test}
+      - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-discovery_meta_verify_token_2026}
+      - META_APP_SECRET=${META_APP_SECRET:-discovery_meta_app_secret_test}
     depends_on:
       - redis
 
@@ -145,7 +145,7 @@ services:
     build:
       context: .
       dockerfile: services/brief-clustering/Dockerfile
-    container_name: veriscope-brief-clustering
+    container_name: discovery-brief-clustering
     ports:
       - "8009:8009"
     environment:
@@ -158,7 +158,7 @@ services:
     build:
       context: .
       dockerfile: frontend/dashboard/Dockerfile
-    container_name: veriscope-dashboard
+    container_name: discovery-dashboard
     ports:
       - "3000:80"
     depends_on:

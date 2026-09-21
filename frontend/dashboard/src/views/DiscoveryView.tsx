@@ -29,6 +29,8 @@ export const DiscoveryView: React.FC = () => {
   const [searchInput, setSearchInput] = useState('Artificial Intelligence');
   const [activeModality, setActiveModality] = useState<'text' | 'image' | 'audio' | 'video'>('text');
   const [targetLanguage, setTargetLanguage] = useState<string>('en');
+  const [timeRange, setTimeRange] = useState<string>('all');
+  const [strictRelevance, setStrictRelevance] = useState<boolean>(true);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [uploadedBase64, setUploadedBase64] = useState<string>('');
   const [uploadedMimeType, setUploadedMimeType] = useState<string>('');
@@ -54,6 +56,8 @@ export const DiscoveryView: React.FC = () => {
       query: searchInput.trim() || undefined,
       inputModality: activeModality,
       targetLanguage: targetLanguage,
+      timeRange: timeRange,
+      strictRelevance: strictRelevance,
       mediaFileName: uploadedFileName || undefined,
       mediaBase64: uploadedBase64 || undefined,
       mediaMimeType: uploadedMimeType || undefined,
@@ -285,11 +289,11 @@ export const DiscoveryView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="text-xs text-slate-500 font-medium">Try searching:</span>
           {[
+            'cm vijay',
             'Artificial Intelligence',
             'Tata Motors EV',
             'ISRO Gaganyaan Mission',
-            'Quantum Computing Breakthroughs',
-            'Global Renewable Energy Policies'
+            'Quantum Computing Breakthroughs'
           ].map((pill) => (
             <button
               key={pill}
@@ -300,6 +304,53 @@ export const DiscoveryView: React.FC = () => {
               {pill}
             </button>
           ))}
+        </div>
+
+        {/* Interactive Search Constraints Bar (Time Period & Precision) */}
+        <div className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            {/* Time Duration Chips */}
+            <div className="flex items-center space-x-2 flex-wrap">
+              <span className="text-slate-400 font-semibold flex items-center space-x-1">
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Search Duration:</span>
+              </span>
+              <div className="flex items-center space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                {[
+                  { id: 'all', label: '⏱️ All Time' },
+                  { id: '24h', label: 'Last 24 Hours' },
+                  { id: '7d', label: 'Last 7 Days' },
+                  { id: '30d', label: 'Last 30 Days' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTimeRange(t.id)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                      timeRange === t.id
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Strict Relevance Toggle */}
+            <label className="flex items-center space-x-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={strictRelevance}
+                onChange={(e) => setStrictRelevance(e.target.checked)}
+                className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0"
+              />
+              <span className="text-slate-300 font-medium text-[11px]">
+                🎯 Strict Subject Focus (Only return exact topic matches)
+              </span>
+            </label>
+          </div>
         </div>
 
         {/* Action Button */}

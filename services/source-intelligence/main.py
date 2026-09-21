@@ -1,5 +1,5 @@
 """
-VeriScope Source Intelligence Agent (Phase 5 Trust Layer)
+Discovery Source Intelligence Agent (Phase 5 Trust Layer)
 Compliant with PRD Section 7.8, TRD Section 5.8, and TRD Section 6
 
 Capabilities:
@@ -21,10 +21,10 @@ from services.common.db import db
 from services.common.models import SourceTier, AuditLogEntry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.source_intelligence")
+logger = logging.getLogger("discovery.source_intelligence")
 
 app = FastAPI(
-    title="VeriScope Source Intelligence Agent",
+    title="Discovery Source Intelligence Agent",
     description="Domain/Channel Discovery, Authority Scoring, and Tier Management Service",
     version="1.0.0",
 )
@@ -86,6 +86,31 @@ def evaluate_source_credibility(
     elif any(k in clean_target for k in [".xyz", ".top", ".info", "clickbait", "rumor", "viral-news"]):
         score = 0.20
         reasons.append("High-risk TLD or unverified blog indicator")
+    else:
+        # Dynamic Source Evaluation via LLMRouter for previously unseen domains
+        try:
+            from services.common.llm_router import llm_router
+            eval_prompt = f"""You are the Source Intelligence & Credibility Assessment Agent.
+Evaluate the journalistic credibility, publication authority, and reputation of the following domain: "{clean_target}"
+
+Return valid JSON only:
+{{
+  "credibility_score": 0.0 to 1.0,
+  "tier": 1 (Top Global/National Wire) or 2 (Established Industry/Regional News) or 3 (Blog/Aggregator/Unverified),
+  "rationale": "One concise sentence on editorial standards and reputation."
+}}
+"""
+            raw_eval, _ = llm_router.generate_text(eval_prompt)
+            if raw_eval:
+                match = re.search(r"\{.*\}", raw_eval, re.DOTALL)
+                if match:
+                    eval_data = json.loads(match.group(0))
+                    score = float(eval_data.get("credibility_score", 0.60))
+                    reasons.append(eval_data.get("rationale", "AI domain intelligence evaluation."))
+        except Exception as eval_err:
+            logger.debug("LLM source evaluation notice for %s: %s", clean_target, eval_err)
+            score = 0.60
+            reasons.append("Standard web domain heuristic baseline.")
 
     # 2. Platform Verification Boost
     if is_verified_badge:

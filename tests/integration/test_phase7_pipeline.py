@@ -1,5 +1,5 @@
 """
-Full End-to-End Integration Tests for VeriScope Phase 7
+Full End-to-End Integration Tests for Discovery Phase 7
 Validates Pipeline A (Proactive Monitoring) and Pipeline B (Reactive Public Verification)
 across all 10 Agent Services.
 """
@@ -186,5 +186,5 @@ async def test_full_pipeline_b_end_to_end_flow():
     assert response.status_code == 200
     res_data = response.json()
     assert res_data["status"] == "replied"
-    assert "VeriScope Verdict" in res_data["message"]
+    assert "Discovery Verdict" in res_data["message"]
     assert len(res_data["phone_number_hash"]) == 64

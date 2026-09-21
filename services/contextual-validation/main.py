@@ -1,5 +1,5 @@
 """
-VeriScope Contextual Validation Agent (Phase 1 Semantic Core)
+Discovery Contextual Validation Agent (Phase 1 Semantic Core)
 Compliant with PRD Section 7.6, TRD Section 5.6, TRD Section 6, and TRD Section 10
 
 Capabilities:
@@ -22,14 +22,14 @@ from pydantic import BaseModel, Field
 
 from services.common.bus import bus
 from services.common.db import db
-from services.common.gemini_client import gemini_client
+from services.common.llm_router import llm_router
 from services.common.models import Validation, ValidationStatus, AuditLogEntry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.contextual_validation")
+logger = logging.getLogger("discovery.contextual_validation")
 
 app = FastAPI(
-    title="VeriScope Contextual Validation Agent",
+    title="Discovery Contextual Validation Agent",
     description="LLM Disambiguation and Three-Way Confidence Routing Service",
     version="1.0.0",
 )
@@ -84,8 +84,8 @@ async def validate_candidate_match(
     lang_tag = db.get_language_tag(article.id)
     effective_text = lang_tag.translated_text if lang_tag and lang_tag.translated_text else article.extracted_text
 
-    # Call Gemini contextual validation
-    llm_result = gemini_client.validate_context(
+    # Call LLM contextual validation via LLMRouter
+    llm_result = llm_router.validate_context(
         entity_name=entity.name,
         disambiguation_context=entity.disambiguation_context,
         exclusion_terms=entity.exclusion_terms,

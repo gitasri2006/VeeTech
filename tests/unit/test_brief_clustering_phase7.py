@@ -1,5 +1,5 @@
 """
-Unit tests for VeriScope Phase 7 (Brief & Clustering Agent)
+Unit tests for Discovery Phase 7 (Brief & Clustering Agent)
 """
 import pytest
 from datetime import datetime

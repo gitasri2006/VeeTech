@@ -1,6 +1,6 @@
-# VeriScope Filtering Agent
+# Discovery Filtering Agent
 
-Part of **VeriScope** (Intelligent News Discovery & Media Authentication Platform).
+Part of **Discovery** (Intelligent News Discovery & Media Authentication Platform).
 Compliant with **PRD Section 7.5** and **TRD Section 5.5**.
 
 ## Capabilities

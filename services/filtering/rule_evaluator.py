@@ -1,5 +1,5 @@
 """
-VeriScope Deterministic Rule Evaluator
+Discovery Deterministic Rule Evaluator
 Compliant with TRD Section 5.5 and PRD Section 7.5
 
 Evaluates candidate Articles against configured Rules:

@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 2 Global Discovery Agent
+Unit Tests for Discovery Phase 2 Global Discovery Agent
 Tests: Query expansion, Multi-adapter fan-out, URL deduplication, and Candidate publishing
 """
 

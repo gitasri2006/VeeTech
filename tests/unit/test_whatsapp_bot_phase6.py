@@ -1,5 +1,5 @@
 """
-Unit tests for VeriScope Phase 6 (Public Utility — WhatsApp Verification Bot)
+Unit tests for Discovery Phase 6 (Public Utility — WhatsApp Verification Bot)
 """
 import pytest
 from datetime import datetime
@@ -91,7 +91,7 @@ def test_meta_webhook_challenge_handshake():
         "/webhooks/whatsapp",
         params={
             "hub.mode": "subscribe",
-            "hub.verify_token": "veriscope_meta_verify_token_2026",
+            "hub.verify_token": "discovery_meta_verify_token_2026",
             "hub.challenge": "1158201444",
         }
     )
@@ -118,6 +118,6 @@ def test_format_whatsapp_reply():
         evidence_urls=["https://pib.gov.in/pressrelease/123"],
         language="en"
     )
-    assert "✅ *VeriScope Verdict: VERIFIED*" in reply
+    assert "✅ *Discovery Verdict: VERIFIED*" in reply
     assert "https://pib.gov.in/pressrelease/123" in reply
-    assert "VeriScope Public Truth Bot" in reply
+    assert "Discovery Public Truth Bot" in reply

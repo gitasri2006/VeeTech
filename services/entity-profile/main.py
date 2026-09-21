@@ -1,5 +1,5 @@
 """
-VeriScope Entity Profile Agent (Phase 1 Semantic Core)
+Discovery Entity Profile Agent (Phase 1 Semantic Core)
 Compliant with PRD Section 7.4, TRD Section 5.4, and TRD Section 6
 
 Capabilities:
@@ -17,14 +17,14 @@ from pydantic import BaseModel, Field
 
 from services.common.db import db
 from services.common.embeddings import embedding_service
-from services.common.gemini_client import gemini_client
+from services.common.llm_router import llm_router
 from services.common.models import Entity, AuditLogEntry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.entity_profile")
+logger = logging.getLogger("discovery.entity_profile")
 
 app = FastAPI(
-    title="VeriScope Entity Profile Agent",
+    title="Discovery Entity Profile Agent",
     description="Entity Knowledge Graph, Alias Expansion, and Disambiguation Profile Service",
     version="1.0.0",
 )
@@ -79,7 +79,7 @@ async def create_entity(request: CreateEntityRequest):
     Automatically generates aliases, seed terms, exclusion terms, and disambiguation context via Gemini,
     then generates and indexes the 768-dim profile embedding.
     """
-    profile_data = gemini_client.generate_entity_profile(
+    profile_data = llm_router.generate_entity_profile(
         name=request.name,
         description=request.description or f"Corporate entity in {request.type}",
         url=request.url or ""

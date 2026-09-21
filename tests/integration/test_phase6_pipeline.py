@@ -1,5 +1,5 @@
 """
-Integration test for VeriScope Phase 6 (Pipeline B — Public WhatsApp Verification Flow)
+Integration test for Discovery Phase 6 (Pipeline B — Public WhatsApp Verification Flow)
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -36,7 +36,7 @@ async def test_end_to_end_whatsapp_verified_news_flow():
     assert data["status"] == "replied"
     assert data["verdict"] in [FactCheckVerdict.VERIFIED.value, FactCheckVerdict.UNVERIFIED.value]
     assert data["needs_human_review"] is False
-    assert "VeriScope Verdict" in data["message"]
+    assert "Discovery Verdict" in data["message"]
     assert len(data["phone_number_hash"]) == 64
 
 
@@ -69,7 +69,7 @@ async def test_end_to_end_whatsapp_misinformation_and_analyst_sign_off():
     assert data["status"] == "queued_for_review"
     assert data["needs_human_review"] is True
     assert data["verdict"] == FactCheckVerdict.LIKELY_FALSE.value
-    assert "VeriScope Verification In Progress" in data["message"]
+    assert "Discovery Verification In Progress" in data["message"]
     query_id = data["query_id"]
 
     # 2. Verify query is listed in the moderation queue

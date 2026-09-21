@@ -1,5 +1,5 @@
 """
-VeriScope Multilingual Processing Service (Phase 4 Multilingual)
+Discovery Multilingual Processing Service (Phase 4 Multilingual)
 Compliant with PRD Section 7.3, 8.4 and TRD Section 5.3
 
 Capabilities:
@@ -22,10 +22,10 @@ from services.common.db import db
 from services.common.models import LanguageTag, Article
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.multilingual")
+logger = logging.getLogger("discovery.multilingual")
 
 app = FastAPI(
-    title="VeriScope Multilingual Processing Service",
+    title="Discovery Multilingual Processing Service",
     description="Cross-Lingual Language Detection, Translation, and Regional Tagging Service",
     version="1.0.0",
 )

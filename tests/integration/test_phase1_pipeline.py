@@ -1,5 +1,5 @@
 """
-Integration Tests for VeriScope Phase 1 Pipeline
+Integration Tests for Discovery Phase 1 Pipeline
 Tests full flow: Entity Onboarding -> RSS Ingestion -> Semantic & Rule Filtering -> Contextual Disambiguation
 """
 

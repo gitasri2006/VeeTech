@@ -1,5 +1,5 @@
 """
-Unit Tests for VeriScope Phase 0 Extraction & Filtering Rule Evaluator
+Unit Tests for Discovery Phase 0 Extraction & Filtering Rule Evaluator
 Compliant with PRD Section 14 (Phase 0) & TRD Section 10
 """
 
@@ -45,12 +45,12 @@ SAMPLE_RSS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 
 SAMPLE_ATOM_XML = """<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>VeriScope Dispatch</title>
-  <link href="https://dispatch.veriscope.ai"/>
+  <title>Discovery Dispatch</title>
+  <link href="https://dispatch.discovery.ai"/>
   <updated>2026-09-18T10:00:00Z</updated>
   <entry>
     <title>Autonomous Drones Complete 10,000 Delivery Test Flights</title>
-    <link href="https://dispatch.veriscope.ai/posts/drone-test-flights"/>
+    <link href="https://dispatch.discovery.ai/posts/drone-test-flights"/>
     <id>urn:uuid:12345-atom-drone-test</id>
     <updated>2026-09-18T09:00:00Z</updated>
     <summary>Flight test operations across three continents validated long-range fail-safes.</summary>
@@ -61,8 +61,8 @@ SAMPLE_ATOM_XML = """<?xml version="1.0" encoding="utf-8"?>
 SAMPLE_HTML_PAGE = """<!DOCTYPE html>
 <html>
 <head>
-  <title>VeriScope Breakthrough in Multilingual Disambiguation</title>
-  <meta property="og:title" content="VeriScope Breakthrough in Multilingual Disambiguation" />
+  <title>Discovery Breakthrough in Multilingual Disambiguation</title>
+  <meta property="og:title" content="Discovery Breakthrough in Multilingual Disambiguation" />
   <meta property="og:site_name" content="AI Research Daily" />
   <meta name="author" content="Dr. Alan Turing" />
   <meta property="article:published_time" content="2026-09-18T07:00:00Z" />
@@ -71,7 +71,7 @@ SAMPLE_HTML_PAGE = """<!DOCTYPE html>
   <nav><a href="/">Home</a><a href="/about">About</a></nav>
   <header><h1>Header Navigation</h1></header>
   <article>
-    <h1>VeriScope Breakthrough in Multilingual Disambiguation</h1>
+    <h1>Discovery Breakthrough in Multilingual Disambiguation</h1>
     <p class="byline">By Dr. Alan Turing</p>
     <p>Researchers have introduced an intelligent cross-lingual matching framework that operates across twelve Indic languages and ten international languages.</p>
     <p>The framework avoids costly full LLM translation passes by utilizing deterministic rule gates combined with 768-dimensional multilingual embeddings.</p>
@@ -115,17 +115,17 @@ def test_parse_rss_feed():
 
 
 def test_parse_atom_feed():
-    items = parse_rss_with_xml_fallback(SAMPLE_ATOM_XML, default_source="VeriScope Dispatch")
+    items = parse_rss_with_xml_fallback(SAMPLE_ATOM_XML, default_source="Discovery Dispatch")
     assert len(items) == 1
     item = items[0]
     assert item["title"] == "Autonomous Drones Complete 10,000 Delivery Test Flights"
-    assert item["canonical_url"] == "https://dispatch.veriscope.ai/posts/drone-test-flights"
+    assert item["canonical_url"] == "https://dispatch.discovery.ai/posts/drone-test-flights"
     assert "Flight test operations" in item["extracted_text"]
 
 
 def test_extract_static_html():
     result = extract_static_html(SAMPLE_HTML_PAGE, url="https://airesearchdaily.com/breakthrough")
-    assert result["title"] == "VeriScope Breakthrough in Multilingual Disambiguation"
+    assert result["title"] == "Discovery Breakthrough in Multilingual Disambiguation"
     assert result["author"] == "Dr. Alan Turing"
     assert result["source"] == "AI Research Daily"
     assert "cross-lingual matching framework" in result["extracted_text"]

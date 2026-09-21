@@ -1,9 +1,9 @@
 % Product Requirements Document — Version 3.0 (Final, Build-Ready)
-% VeriScope — Intelligent News Discovery & Media Authentication Platform
+% Discovery — Intelligent News Discovery & Media Authentication Platform
 
 # 1. Executive Summary
 
-VeriScope is an AI-agent platform that replaces manual, keyword-based media monitoring with a system that finds relevant news the way a trained analyst would: by understanding context and intent, not matching strings. A user (a PR/comms team, or the general public via WhatsApp) provides a keyword, an entity, or a piece of content, and the system discovers, extracts, reads, translates, verifies, and delivers coverage from across the open web and social media — in any format (text, image, video, audio) and any major language — along with an authenticity verdict for every item.
+Discovery is an AI-agent platform that replaces manual, keyword-based media monitoring with a system that finds relevant news the way a trained analyst would: by understanding context and intent, not matching strings. A user (a PR/comms team, or the general public via WhatsApp) provides a keyword, an entity, or a piece of content, and the system discovers, extracts, reads, translates, verifies, and delivers coverage from across the open web and social media — in any format (text, image, video, audio) and any major language — along with an authenticity verdict for every item.
 
 This is the final, build-ready specification. It consolidates three prior inputs into one coherent plan:
 
@@ -52,7 +52,7 @@ Manual and keyword-based media tracking fails at scale because news discovery re
 - **Fact-Verification Analyst** — reviews items the system flags as "Disputed" or "Needs Review"; confirms or overturns the automated verdict.
 - **Platform Admin** — manages entities, users, roles, source/channel tier lists, and system health.
 - **Executive Stakeholder** — consumes a read-only weekly digest of sentiment, volume, and top verified stories.
-- **Public User (WhatsApp)** — any member of the public who forwards a suspicious message, image, video, or voice note to the VeriScope WhatsApp number and expects a fast, trustworthy verdict back, with no account or login required.
+- **Public User (WhatsApp)** — any member of the public who forwards a suspicious message, image, video, or voice note to the Discovery WhatsApp number and expects a fast, trustworthy verdict back, with no account or login required.
 
 # 5. Scope
 
@@ -271,7 +271,7 @@ WhatsApp message received → Public Verification Bot Agent → Extraction (mult
 
 **B. Keyword-to-insight monitoring:** Analyst types a keyword or entity name → Global Discovery Agent searches globally across web and social platforms in every supported language → Extraction, Multilingual, Filtering, Contextual Validation, and Fact-Checking run automatically → Analyst sees one unified, scored, authenticity-tagged feed.
 
-**C. Public WhatsApp check:** A member of the public forwards a suspicious image/video/voice-note to the VeriScope WhatsApp number → the Public Verification Bot Agent processes it through Extraction, Multilingual, and Fact-Checking → the user receives a plain-language verdict with evidence within seconds (or after human review if Disputed).
+**C. Public WhatsApp check:** A member of the public forwards a suspicious image/video/voice-note to the Discovery WhatsApp number → the Public Verification Bot Agent processes it through Extraction, Multilingual, and Fact-Checking → the user receives a plain-language verdict with evidence within seconds (or after human review if Disputed).
 
 # 13. Risks, Compliance & Open Questions
 

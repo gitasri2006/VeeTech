@@ -1,34 +1,38 @@
 """
-VeriScope Fact-Checking & Authenticity Agent (Phase 5 Trust Layer)
-Compliant with PRD Section 7.7, 8.5, TRD Section 5.7, and TRD Section 6
-
-Capabilities:
-1. Cross-Source Corroboration: Checks claim occurrence across independent Tier-1 sources.
-2. Claim-Level Fact-Check Lookups: Queries Google Fact Check Tools API and regional debunk feeds (PIB, Alt News, BOOM Live).
-3. Manipulated Media & Stale Context Detection: Checks reverse image matches and video tamper flags.
-4. Authenticity Scoring & Verdict Synthesis: Produces authenticity_score (0.0 to 1.0) and verdict enum.
-5. MANDATORY HUMAN REVIEW: Disputed and Likely False items ALWAYS set `needs_human_review = True`.
-6. Emits `factcheck.verdict` event to Redis Streams / MessageBus.
+Discovery Fact-Checking & Authenticity Agent (Phase 5 Trust Layer)
+Compliant with PRD Section 7.7, 8.5, TRD Section 5.7, and Requirement 6
+Gathers independent evidence from Google Fact Check Tools API and Serper Fact-Check Search,
+evaluates cross-source consensus via Dual-LLM (Gemini + Mistral), and enforces mandatory human review.
 """
 
 from datetime import datetime, timezone
+import json
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple
+import urllib.parse
+import urllib.request
+
 from fastapi import FastAPI, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from services.common.bus import bus
 from services.common.db import db
-from services.common.gemini_client import gemini_client
+from services.common.llm_router import llm_router
 from services.common.models import FactCheckResult, FactCheckVerdict, AuditLogEntry
+import importlib
+try:
+    serper_adapter = importlib.import_module("services.global-discovery.serper_adapter").serper_adapter
+except Exception:
+    serper_adapter = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("veriscope.fact_checking")
+logger = logging.getLogger("discovery.fact_checking")
 
 app = FastAPI(
-    title="VeriScope Fact-Checking & Authenticity Agent",
+    title="Discovery Fact-Checking & Authenticity Agent",
     description="Automated Fact Verification, Authenticity Scoring, and Human-in-the-Loop Moderation Service",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 
@@ -47,60 +51,47 @@ class HumanReviewRequest(BaseModel):
     override_reason: str = Field(..., description="Analyst rationale for verdict decision.")
 
 
-import json
-import os
-import urllib.parse
-import urllib.request
-
-def query_fact_check_database(title: str, text: str) -> List[Dict[str, Any]]:
-    """Query live Google Fact Check API when key available, with regional debunk fallback."""
-    matches = []
+async def query_fact_check_database(title: str, text: str) -> List[Dict[str, Any]]:
+    """
+    Query live Google Fact Check API and accredited debunker registries via Serper API.
+    Zero hardcoded URLs or canned responses.
+    """
+    matches: List[Dict[str, Any]] = []
     api_key = os.getenv("GOOGLE_FACTCHECK_API_KEY") or os.getenv("GEMINI_API_KEY")
-
     search_query = title.strip() or text[:120].strip()
+
+    # 1. Google Fact Check Tools API Search
     if api_key and search_query:
         try:
-            encoded = urllib.parse.quote(search_query)
+            encoded = urllib.parse.quote(search_query[:100])
             url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={encoded}&key={api_key}"
-            req = urllib.request.Request(url, headers={"User-Agent": "VeriScope/1.0"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                for item in data.get("claims", []):
-                    reviews = item.get("claimReview", [])
-                    if reviews:
-                        rev = reviews[0]
-                        matches.append({
-                            "claim": item.get("text", search_query),
-                            "claimant": item.get("claimant", "Public Claim"),
-                            "fact_checker": rev.get("publisher", {}).get("name", "Fact Checker"),
-                            "rating": rev.get("textualRating", "Unverified"),
-                            "url": rev.get("url", ""),
-                            "review_date": rev.get("reviewDate", datetime.now(timezone.utc).isoformat()),
-                            "language": rev.get("languageCode", "en"),
-                        })
+            req = urllib.request.Request(url, headers={"User-Agent": "Discovery/2.0"})
+            loop = asyncio.get_event_loop()
+            data_bytes = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=5).read())
+            data = json.loads(data_bytes.decode("utf-8"))
+            for item in data.get("claims", []):
+                reviews = item.get("claimReview", [])
+                if reviews:
+                    rev = reviews[0]
+                    matches.append({
+                        "claim": item.get("text", search_query),
+                        "claimant": item.get("claimant", "Public Claim"),
+                        "fact_checker": rev.get("publisher", {}).get("name", "Fact Checker"),
+                        "rating": rev.get("textualRating", "Unverified"),
+                        "url": rev.get("url", ""),
+                        "review_date": rev.get("reviewDate", datetime.now(timezone.utc).isoformat()),
+                        "language": rev.get("languageCode", "en"),
+                    })
         except Exception as exc:
-            logger.debug("Google Fact Check API query notice: %s", exc)
+            logger.debug("Google Fact Check API notice: %s", exc)
 
-    if not matches:
-        combined = (title + " " + text).lower()
-        if any(k in combined for k in ["hoax", "fake viral", "5g causes virus", "miracle cure", "deepfake speech", "unesco declares", "unesco", "nasa diwali"]):
-            matches.append({
-                "claim": "Viral claim regarding miraculous cure or fabricated statement.",
-                "claimant": "Social Media Viral Posts",
-                "fact_checker": "Alt News & BOOM Live",
-                "rating": "False / Fabricated",
-                "url": "https://boomlive.in/fact-check/debunked-viral-claim",
-                "review_date": datetime.now(timezone.utc).isoformat(),
-            })
-        elif "disputed rumor" in combined or "alleged leak" in combined:
-            matches.append({
-                "claim": "Unconfirmed leak regarding confidential corporate transactions.",
-                "claimant": "Anonymous Blog",
-                "fact_checker": "PIB Fact Check",
-                "rating": "Unverified / Disputed",
-                "url": "https://pib.gov.in/factcheck/disputed",
-                "review_date": datetime.now(timezone.utc).isoformat(),
-            })
+    # 2. Serper-backed Fact-Check Search (searching Snopes, AltNews, BOOM Live, FactCheck.org, Politifact, PIB)
+    try:
+        serper_fc = await serper_adapter.search_fact_check_registries(search_query)
+        for s_fc in serper_fc:
+            matches.append(s_fc)
+    except Exception as s_err:
+        logger.debug("Serper fact-check search notice: %s", s_err)
 
     return matches
 
@@ -112,7 +103,7 @@ def check_media_authenticity(article_id: str, force_manipulated: bool = False) -
     """
     media_assets = db.get_media_by_article(article_id)
     if force_manipulated:
-        return True, False, [{"match_url": "https://stockphoto.example.com/2018-recycled.jpg", "similarity": 0.99, "year": 2018}]
+        return True, False, []
 
     if not media_assets:
         return False, False, []
@@ -120,10 +111,10 @@ def check_media_authenticity(article_id: str, force_manipulated: bool = False) -
     for asset in media_assets:
         if asset.type.value in ["image", "video"]:
             text_corpus = f"{asset.ocr_text or ''} {asset.caption or ''}".lower()
-            if "recycled photo" in text_corpus or "2015 archive" in text_corpus:
-                return False, True, [{"match_url": "https://archive.example.com/2015-original.jpg", "year": 2015}]
+            if "recycled" in text_corpus or "stale context" in text_corpus:
+                return False, True, []
             if "deepfake" in text_corpus or "tampered" in text_corpus:
-                return True, False, [{"match_url": "https://faceforensics.org/tampered", "tamper_score": 0.94}]
+                return True, False, []
 
     return False, False, []
 
@@ -134,58 +125,61 @@ async def evaluate_article_authenticity(
 ) -> FactCheckResult:
     """
     Comprehensive Fact-Checking Pass:
-    1. Fact-check DB lookup.
-    2. Media authenticity & reverse search.
-    3. Gemini synthesis.
+    1. Query live Google Fact Check API & Serper debunker databases.
+    2. Check media tampering flags.
+    3. Evaluate cross-source evidence and Dual-LLM consensus via LLMRouter.
     4. Enforce mandatory human review for Disputed / Likely False verdicts.
     """
     article = db.get_article(article_id)
     if not article:
         raise ValueError(f"Article {article_id} not found.")
 
-    # 1. Fact Check DB matches
-    claim_matches = query_fact_check_database(article.title, article.extracted_text)
+    # 1. Live Fact Check DB query
+    claim_matches = await query_fact_check_database(article.title, article.extracted_text)
 
-    # 2. Reverse search & media tamper checks
-    is_manipulated, is_stale, media_matches = check_media_authenticity(article_id, force_manipulated)
+    # 2. Media authenticity
+    is_manipulated, is_stale, _ = check_media_authenticity(article_id, force_manipulated)
 
-    # 3. Gemini fact check evaluation
-    fc_synthesis = gemini_client.evaluate_fact_check(
-        title=article.title,
-        text=article.extracted_text,
-        claim_matches=claim_matches,
-        reverse_image_matches=media_matches,
-        source_tier=article.source_tier,
+    # 3. Dual-LLM Consensus Evaluation
+    sources_repr = [{
+        "title": article.title,
+        "source": article.source,
+        "source_tier": article.source_tier,
+        "url": article.canonical_url,
+        "snippet": article.extracted_text[:600],
+    }]
+
+    eval_result = llm_router.evaluate_claim_consensus(
+        claim=article.title,
+        sources=sources_repr,
+        fact_check_matches=claim_matches,
     )
 
-    score = float(fc_synthesis.get("authenticity_score", 0.50))
-    verdict_str = fc_synthesis.get("verdict", "Unverified")
+    score = float(eval_result.get("authenticity_score", 0.50))
+    verdict_str = eval_result.get("verdict", "Unverified")
 
-    # Map string to FactCheckVerdict Enum
     if is_manipulated or verdict_str == "Likely False":
         verdict = FactCheckVerdict.LIKELY_FALSE
-        score = min(score, 0.20)
+        score = min(score, 0.15)
     elif verdict_str == "Disputed":
         verdict = FactCheckVerdict.DISPUTED
-        score = min(score, 0.50)
+        score = min(score, 0.48)
     elif verdict_str == "Verified":
         verdict = FactCheckVerdict.VERIFIED
     else:
         verdict = FactCheckVerdict.UNVERIFIED
 
-    # NON-NEGOTIABLE GLOBAL RULE:
-    # Disputed and Likely False items MUST ALWAYS route to human review before final publish!
-    needs_review = verdict in [FactCheckVerdict.DISPUTED, FactCheckVerdict.LIKELY_FALSE]
+    # Mandatory Human Review for Disputed / Likely False items
+    needs_review = verdict in [FactCheckVerdict.DISPUTED, FactCheckVerdict.LIKELY_FALSE] or eval_result.get("needs_human_review", False)
 
-    evidence = fc_synthesis.get("evidence", [])
-    if claim_matches:
-        for cm in claim_matches:
-            evidence.append({
-                "source": cm["fact_checker"],
-                "status": "debunked" if verdict == FactCheckVerdict.LIKELY_FALSE else "disputed",
-                "url": cm["url"],
-                "summary": cm["claim"],
-            })
+    evidence: List[Dict[str, Any]] = []
+    for cm in claim_matches:
+        evidence.append({
+            "source": cm.get("fact_checker", "Accredited Fact Checker"),
+            "status": "debunked" if "false" in str(cm.get("rating", "")).lower() else "corroborating",
+            "url": cm.get("url", ""),
+            "summary": cm.get("claim", cm.get("title", "")),
+        })
 
     result = FactCheckResult(
         article_id=article.id,
@@ -219,65 +213,77 @@ async def evaluate_article_authenticity(
 # REST Endpoints
 # =====================================================================
 
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "healthy", "service": "fact-checking", "version": "1.0.0"}
+@app.get("/health", tags=["Health"])
+async def health():
+    return {"status": "healthy", "service": "fact-checking", "version": "2.0.0"}
 
 
-@app.post("/factcheck/evaluate", response_model=FactCheckResult, tags=["Fact-Checking"])
+@app.post("/factcheck/evaluate", response_model=FactCheckResult, tags=["Fact Checking"])
 async def evaluate_endpoint(request: EvaluateFactCheckRequest):
-    """Run fact-check and authenticity verification on an article."""
     try:
-        return await evaluate_article_authenticity(
+        result = await evaluate_article_authenticity(
             article_id=request.article_id,
             force_manipulated=request.force_manipulated_flag,
         )
+        return result
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as exc:
+        logger.error("Fact-check evaluation failed: %s", exc)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
-@app.get("/factcheck/queue", response_model=List[FactCheckResult], tags=["Moderation"])
-async def list_human_review_queue():
-    """Retrieve all Disputed or Likely False items requiring Fact-Verification Analyst sign-off."""
+@app.get("/factcheck/queue", response_model=List[FactCheckResult], tags=["Human-in-the-Loop Review"])
+async def get_review_queue():
+    """List all articles requiring mandatory human fact-checking review."""
     return db.list_fact_checks_for_review()
 
 
-@app.get("/factcheck/{article_id}", response_model=FactCheckResult, tags=["Fact-Checking"])
-async def get_fact_check_endpoint(article_id: str):
-    """Retrieve fact-check result for an article."""
-    res = db.get_fact_check(article_id)
-    if not res:
-        raise HTTPException(status_code=404, detail="Fact check result not found.")
-    return res
-
-
-@app.post("/factcheck/{article_id}/review", response_model=FactCheckResult, tags=["Moderation"])
-async def submit_human_review(article_id: str, request: HumanReviewRequest):
+@app.post("/factcheck/{article_id}/override", response_model=FactCheckResult, tags=["Human-in-the-Loop Review"])
+async def human_override_endpoint(article_id: str, request: HumanReviewRequest):
     """
-    Fact-Verification Analyst sign-off endpoint to confirm or overturn automated verdict.
+    Analyst Human-in-the-Loop Decision:
+    Allows authorized FactVerifier/Analyst to overturn or confirm a verdict.
     """
     fc = db.get_fact_check(article_id)
     if not fc:
-        raise HTTPException(status_code=404, detail="Fact check not found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No fact-check record for article {article_id}")
 
-    before_state = fc.model_dump()
-
+    old_verdict = fc.verdict
     fc.verdict = request.final_verdict
     fc.reviewed_by = request.reviewed_by
-    fc.human_override_reason = request.override_reason
-    fc.needs_human_review = False  # Cleared upon human sign-off
+    fc.needs_human_review = False
+    
+    if request.final_verdict == FactCheckVerdict.VERIFIED:
+        fc.authenticity_score = 0.95
+    elif request.final_verdict == FactCheckVerdict.LIKELY_FALSE:
+        fc.authenticity_score = 0.10
+    elif request.final_verdict == FactCheckVerdict.DISPUTED:
+        fc.authenticity_score = 0.50
+
     db.save_fact_check(fc)
 
-    # Log to audit trail
-    db.log_audit(
-        AuditLogEntry(
-            actor_id=request.reviewed_by,
-            action_type="fact_check_human_sign_off",
-            target_id=fc.id,
-            before=before_state,
-            after=fc.model_dump(),
-        )
+    # Log to PostgreSQL audit log
+    audit_entry = AuditLogEntry(
+        actor_id=request.reviewed_by,
+        action_type="factcheck.human_override",
+        target_id=article_id,
+        before={"verdict": old_verdict.value, "authenticity_score": fc.authenticity_score},
+        after={"verdict": fc.verdict.value, "authenticity_score": fc.authenticity_score, "reason": request.override_reason},
     )
+    db.log_audit(audit_entry)
 
-    logger.info("Human sign-off completed for FactCheck %s by %s (verdict: %s)", fc.id, request.reviewed_by, fc.verdict.value)
+    # Publish event
+    await bus.publish("factcheck.human_reviewed", {
+        "event": "factcheck.human_reviewed",
+        "article_id": article_id,
+        "old_verdict": old_verdict.value,
+        "new_verdict": fc.verdict.value,
+        "reviewed_by": request.reviewed_by,
+        "reason": request.override_reason,
+    })
+
     return fc
+
+
+import asyncio
