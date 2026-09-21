@@ -128,40 +128,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-8 lg:py-12 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center items-center px-4 py-8 lg:py-12 relative overflow-hidden font-sans select-none">
       
       {/* Interactive Media Automation Network Canvas Background */}
-      <MediaAutomationBackground nodeCount={70} interactive={true} showMediaLabels={true} />
-
-      {/* Dynamic Animated Ambient Background Orbs */}
-      <motion.div 
-        animate={{ 
-          scale: [1, 1.15, 1],
-          opacity: [0.15, 0.25, 0.15],
-          x: [0, 20, 0],
-          y: [0, -15, 0]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-1/4 left-1/4 w-[600px] h-[400px] bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none" 
-      />
-      <motion.div 
-        animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.1, 0.2, 0.1],
-          x: [0, -30, 0],
-          y: [0, 25, 0]
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -bottom-10 right-1/4 w-[500px] h-[350px] bg-blue-600/20 rounded-full blur-[130px] pointer-events-none" 
-      />
-      <motion.div 
-        animate={{ 
-          scale: [1, 1.1, 1],
-          opacity: [0.08, 0.16, 0.08]
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-10 right-1/3 w-[400px] h-[300px] bg-teal-400/15 rounded-full blur-[100px] pointer-events-none" 
-      />
+      <MediaAutomationBackground nodeCount={60} interactive={true} showMediaLabels={true} />
 
       {/* Main Responsive Grid Container */}
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
@@ -175,84 +145,71 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         >
           {/* Platform Status Badge */}
           <div className="flex items-center space-x-2.5">
-            <motion.div 
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>10 Multi-Agent Pipeline Active</span>
-            </motion.div>
-            <span className="text-xs text-slate-400 font-mono flex items-center space-x-1">
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <span className="text-xs text-slate-500 font-medium flex items-center space-x-1">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
               <span>Real-Time Ingestion</span>
             </span>
           </div>
 
           {/* Heading */}
           <div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Autonomous Multimodal <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400">
+              <span className="text-indigo-600">
                 Intelligence & Verification
               </span>
             </h1>
-            <p className="text-sm sm:text-base text-slate-400 mt-3 max-w-xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 mt-3 max-w-xl leading-relaxed">
               Continuous cross-lingual news ingestion, knowledge graph resolution, OCR/ASR validation, and 9-agent consensus synthesis.
             </p>
           </div>
 
           {/* Live Ingestion Metrics Deck */}
           <div className="grid grid-cols-3 gap-3">
-            <motion.div 
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-lg backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium">Ingestion Rate</span>
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 mb-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider">Ingestion Rate</span>
+                <Activity className="w-4 h-4 text-indigo-600" />
               </div>
-              <div className="text-lg font-bold text-white font-mono">1,840<span className="text-xs text-emerald-400 font-normal">/min</span></div>
-              <div className="text-[10px] text-emerald-400/80 mt-0.5 flex items-center space-x-1">
+              <div className="text-xl font-bold text-slate-900 font-mono">1,840<span className="text-xs text-indigo-600 font-normal">/min</span></div>
+              <div className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center space-x-1">
                 <TrendingUp className="w-3 h-3" />
                 <span>+14.2% global spikes</span>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div 
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-lg backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium">Trust Consensus</span>
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 mb-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider">Trust Consensus</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="text-lg font-bold text-white font-mono">99.2%</div>
-              <div className="text-[10px] text-blue-400/80 mt-0.5">Tier 1 Multi-Source</div>
-            </motion.div>
+              <div className="text-xl font-bold text-slate-900 font-mono">99.2%</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">Tier 1 Multi-Source</div>
+            </div>
 
-            <motion.div 
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-lg backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[11px] font-medium">Pipeline Nodes</span>
-                <Cpu className="w-3.5 h-3.5 text-purple-400" />
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 mb-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider">Pipeline Nodes</span>
+                <Cpu className="w-4 h-4 text-purple-600" />
               </div>
-              <div className="text-lg font-bold text-white font-mono">9 Agents</div>
-              <div className="text-[10px] text-purple-400/80 mt-0.5">Zero Bottleneck</div>
-            </motion.div>
+              <div className="text-xl font-bold text-slate-900 font-mono">9 Agents</div>
+              <div className="text-[10px] text-purple-600 mt-0.5 font-medium">Zero Bottleneck</div>
+            </div>
           </div>
 
           {/* Animated News Article Automation Live Showcase */}
-          <div className="relative rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl backdrop-blur-md overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 text-xs mb-3">
+          <div className="relative rounded-2xl bg-white border border-slate-200 p-5 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 text-xs mb-3">
               <div className="flex items-center space-x-2">
-                <Newspaper className="w-4 h-4 text-emerald-400 animate-pulse" />
-                <span className="font-semibold text-slate-200">Live Ingested News Stream</span>
+                <Newspaper className="w-4 h-4 text-indigo-600" />
+                <span className="font-bold text-slate-900">Live Ingested News Stream</span>
               </div>
-              <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 font-mono">
-                <Globe2 className="w-3.5 h-3.5 text-teal-400" />
+              <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 font-medium">
+                <Globe2 className="w-3.5 h-3.5 text-slate-400" />
                 <span>Auto-Synthesized</span>
               </div>
             </div>
@@ -265,34 +222,34 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                   return (
                     <motion.div
                       key={news.id}
-                      initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                      transition={{ duration: 0.45, ease: 'easeOut' }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.35, ease: 'easeOut' }}
                       className="space-y-2"
                     >
                       <div className="flex items-center justify-between text-[11px]">
                         <div className="flex items-center space-x-2">
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold">
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold">
                             {news.source}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px]">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200">
                             {news.tier}
                           </span>
                         </div>
-                        <span className="text-slate-500 font-mono">{news.time}</span>
+                        <span className="text-slate-400 font-mono">{news.time}</span>
                       </div>
 
-                      <h4 className="text-sm font-semibold text-slate-100 leading-snug line-clamp-2">
+                      <h4 className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2">
                         {news.title}
                       </h4>
 
-                      <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-800/50">
-                        <div className="flex items-center space-x-1.5 text-emerald-400 font-mono font-medium">
+                      <div className="flex items-center justify-between pt-2 text-[11px] border-t border-slate-100">
+                        <div className="flex items-center space-x-1.5 text-emerald-600 font-semibold font-mono">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Credibility Score: {news.trustScore}%</span>
                         </div>
-                        <span className="text-slate-400 text-[10px] bg-slate-800/60 px-2 py-0.5 rounded">
+                        <span className="text-slate-500 text-[10px] bg-slate-100 px-2 py-0.5 rounded font-medium border border-slate-200">
                           {news.tag}
                         </span>
                       </div>
@@ -303,13 +260,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             </div>
 
             {/* Progress dots */}
-            <div className="flex items-center justify-center space-x-1.5 mt-3 pt-2 border-t border-slate-800/60">
+            <div className="flex items-center justify-center space-x-1.5 mt-3 pt-2 border-t border-slate-100">
               {LIVE_NEWS_FEED.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveNewsIndex(i)}
                   className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    i === activeNewsIndex ? 'w-6 bg-emerald-400' : 'w-1.5 bg-slate-700 hover:bg-slate-600'
+                    i === activeNewsIndex ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'
                   }`}
                 />
               ))}
@@ -317,28 +274,22 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           </div>
         </motion.div>
 
-        {/* Right Section: Animated Login Form Card */}
+        {/* Right Section: Clean Professional White Login Card */}
         <motion.div 
-          initial={{ opacity: 0, x: 30, scale: 0.97 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
           className="lg:col-span-5 w-full"
         >
-          <div className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+          <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl relative">
             
             {/* Brand Header */}
             <div className="text-center mb-6">
-              <motion.div 
-                whileHover={{ rotate: 180 }}
-                transition={{ duration: 0.6 }}
-                className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 mx-auto mb-3 shadow-xl shadow-emerald-500/20 flex items-center justify-center cursor-pointer"
-              >
-                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-emerald-400">
-                  <Compass className="w-7 h-7" />
-                </div>
-              </motion.div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Discovery</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Secure AI-Agent Platform Access</p>
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200 p-0.5 mx-auto mb-3 flex items-center justify-center">
+                <Compass className="w-7 h-7 text-indigo-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Discovery</h2>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">Secure AI-Agent Platform Access</p>
             </div>
 
             {/* Error Alert */}
@@ -348,7 +299,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                   initial={{ opacity: 0, y: -10, height: 0 }}
                   animate={{ opacity: 1, y: 0, height: 'auto' }}
                   exit={{ opacity: 0, y: -10, height: 0 }}
-                  className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center space-x-2"
+                  className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2"
                 >
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{errorMessage}</span>
@@ -361,15 +312,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               
               {/* Role Dropdown */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Select Role</span>
                 </label>
                 <div className="relative">
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer appearance-none"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition cursor-pointer appearance-none shadow-sm"
                   >
                     <option value="Admin">Admin (Full Platform Control)</option>
                     <option value="Analyst">Lead Fact Analyst (Verification & Queue)</option>
@@ -386,8 +337,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                  <Mail className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Email Address</span>
                 </label>
                 <input
@@ -398,14 +349,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@gmail.com"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition shadow-sm"
                 />
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                  <Lock className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Password</span>
                 </label>
                 <div className="relative">
@@ -417,12 +368,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 p-0.5 cursor-pointer"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -430,12 +381,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </div>
 
               {/* Submit Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/25 disabled:opacity-50 mt-6 cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50 mt-6 cursor-pointer"
               >
                 {isLoading ? (
                   <span>Authenticating...</span>
@@ -445,7 +394,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
-              </motion.button>
+              </button>
             </form>
           </div>
         </motion.div>

@@ -129,6 +129,7 @@ export interface FactCheckResult {
   article_id: string;
   authenticity_score: number;
   verdict: FactCheckVerdict;
+  reasoning?: string;
   evidence_sources: Array<{
     source: string;
     status: string;

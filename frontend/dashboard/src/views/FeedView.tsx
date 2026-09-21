@@ -84,159 +84,151 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
     switch (verdict) {
       case 'Verified':
         return (
-          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Verified ({Math.round(score * 100)}%)</span>
           </span>
         );
       case 'Likely False':
         return (
-          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
             <ShieldAlert className="w-3.5 h-3.5" />
             <span>Likely False ({Math.round(score * 100)}%)</span>
           </span>
         );
       case 'Disputed':
         return (
-          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Disputed ({Math.round(score * 100)}%)</span>
           </span>
         );
       default:
         return (
-          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-300 border border-slate-500/30">
+          <span className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>Unverified ({Math.round(score * 100)}%)</span>
+            <span>Unverified</span>
           </span>
         );
     }
   };
 
-  const getTierBadge = (tier: number) => {
-    if (tier === 1) {
-      return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Tier 1 Authority</span>;
-    } else if (tier === 2) {
-      return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Tier 2 Mainstream</span>;
-    }
-    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300">Tier 3 Aggregator / UGC</span>;
-  };
-
-  const filteredStories = sampleStories.filter((s) => {
-    if (selectedVerdict !== 'All' && s.verdict !== selectedVerdict) return false;
-    if (selectedLanguage !== 'All' && s.language !== selectedLanguage) return false;
-    if (searchFilter && !s.title.toLowerCase().includes(searchFilter.toLowerCase())) return false;
+  const filteredStories = sampleStories.filter((st) => {
+    if (selectedVerdict !== 'All' && st.verdict !== selectedVerdict) return false;
+    if (selectedLanguage !== 'All' && st.language !== selectedLanguage) return false;
+    if (searchFilter && !st.title.toLowerCase().includes(searchFilter.toLowerCase())) return false;
     return true;
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header & Filter Controls */}
+    <div className="p-6 max-w-7xl mx-auto space-y-6 bg-slate-50 text-slate-900 min-h-screen font-sans">
+      {/* View Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            <Newspaper className="w-4 h-4" />
-            <span>Real-Time Stream & Contextual Validation</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Unified Real-Time Story Stream</h1>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center space-x-2.5">
+            <Newspaper className="w-6 h-6 text-indigo-600" />
+            <span>Unified Real-Time Ingested Feed</span>
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Global media streams, verified fact checks, and multimodal cross-language ingestions.
+          </p>
         </div>
 
         {/* Search input */}
-        <div className="flex items-center space-x-3">
+        <div className="w-full md:w-72">
           <input
             type="text"
-            placeholder="Search stories in feed..."
+            placeholder="Search stories or keywords..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
           />
         </div>
       </div>
 
-      {/* Filter Chips Bar */}
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800 text-xs">
-        <span className="text-slate-400 font-semibold mr-2">Authenticity:</span>
-        {['All', 'Verified', 'Unverified', 'Disputed', 'Likely False'].map((v) => (
-          <button
-            key={v}
-            onClick={() => setSelectedVerdict(v)}
-            className={`px-3 py-1 rounded-full font-medium transition border ${
-              selectedVerdict === v
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-            }`}
-          >
-            {v}
-          </button>
-        ))}
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+        {/* Verdict Filter */}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase">Verdict:</span>
+          {['All', 'Verified', 'Disputed', 'Likely False'].map((v) => (
+            <button
+              key={v}
+              onClick={() => setSelectedVerdict(v)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                selectedVerdict === v
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
 
-        <div className="h-4 w-px bg-slate-800 mx-2" />
-
-        <span className="text-slate-400 font-semibold mr-2">Language:</span>
-        {['All', 'en', 'hi', 'ta', 'te', 'fr', 'es'].map((l) => (
-          <button
-            key={l}
-            onClick={() => setSelectedLanguage(l)}
-            className={`px-2.5 py-1 rounded font-mono font-medium transition uppercase border ${
-              selectedLanguage === l
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-            }`}
-          >
-            {l}
-          </button>
-        ))}
+        {/* Language Filter */}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase">Language:</span>
+          {['All', 'en', 'hi', 'ta'].map((lang) => (
+            <button
+              key={lang}
+              onClick={() => setSelectedLanguage(lang)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase transition ${
+                selectedLanguage === lang
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Story Cards List */}
+      {/* Stories Grid */}
       <div className="space-y-4">
         {filteredStories.map((story) => (
           <div
             key={story.id}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition shadow-lg space-y-4"
+            onClick={() => onSelectStory(story.id)}
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition shadow-sm hover:shadow-md cursor-pointer space-y-3 group"
           >
-            {/* Top Meta Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                {getTierBadge(story.source_tier)}
-                <span className="text-xs font-semibold text-slate-300">{story.source}</span>
-                <span className="text-slate-600">•</span>
-                <span className="text-xs text-slate-400">{story.published_at}</span>
-              </div>
-              <div>{getVerdictBadge(story.verdict, story.authenticity_score)}</div>
-            </div>
-
-            {/* Story Title & Multilingual Subtitle */}
-            <div className="space-y-1">
-              <h2 className="text-base font-semibold text-white hover:text-emerald-400 transition cursor-pointer" onClick={() => onSelectStory(story.id)}>
-                {story.title}
-              </h2>
-              {story.translated_text && (
-                <div className="flex items-start space-x-2 text-xs text-emerald-300/90 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                  <Languages className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>English Pivot:</strong> {story.translated_text}</span>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center space-x-2.5 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-800">{story.source}</span>
+                  <span>•</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Tier {story.source_tier}
+                  </span>
+                  <span>•</span>
+                  <span className="uppercase font-mono text-[11px]">{story.language}</span>
+                  <span>•</span>
+                  <span>{story.published_at}</span>
                 </div>
-              )}
-            </div>
 
-            {/* Story Summary */}
-            <p className="text-xs text-slate-300 leading-relaxed">{story.summary}</p>
+                <h3 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                  {story.title}
+                </h3>
 
-            {/* Bottom Meta & Action Links */}
-            <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-800 text-xs">
-              <div className="flex items-center space-x-4 text-slate-400">
-                <span>Disambiguation Confidence: <strong className="text-slate-200">{Math.round(story.confidence * 100)}%</strong></span>
-                <span>•</span>
-                <span>Evidence Sources: <strong className="text-slate-200">{story.evidence_count}</strong></span>
+                {story.translated_text && (
+                  <p className="text-xs text-indigo-700 bg-indigo-50 p-2 rounded-lg border border-indigo-100 font-medium">
+                    <span className="font-bold">Translated:</span> {story.translated_text}
+                  </p>
+                )}
+
+                <p className="text-xs text-slate-600 leading-relaxed font-medium line-clamp-2">
+                  {story.summary}
+                </p>
               </div>
 
-              <button
-                onClick={() => onSelectStory(story.id)}
-                className="flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 font-semibold transition"
-              >
-                <span>Inspect Evidence & Forensics</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col items-end space-y-2 flex-shrink-0">
+                {getVerdictBadge(story.verdict, story.authenticity_score)}
+                <span className="text-[11px] text-indigo-600 font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
+                  <span>View Evidence</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
             </div>
           </div>
         ))}

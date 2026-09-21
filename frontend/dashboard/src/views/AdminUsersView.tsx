@@ -12,30 +12,30 @@ export const AdminUsersView: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
             <Users className="w-4 h-4" />
             <span>Admin Console & Governance</span>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Role-Based Access Control (RBAC)</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Role-Based Access Control (RBAC)</h1>
+          <p className="text-sm text-slate-600 mt-1">
             Manage organization users, team assignments, and granular permissions across 6 role levels per TRD Section 8.
           </p>
         </div>
 
-        <button className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-lg shadow-emerald-900/30">
+        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-sm">
           <UserPlus className="w-4 h-4" />
           <span>Invite Team Member</span>
         </button>
       </div>
 
       {/* Users Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider">
             <tr>
               <th className="py-3.5 px-6 font-semibold">User Name & Email</th>
               <th className="py-3.5 px-6 font-semibold">Assigned Role</th>
@@ -44,29 +44,29 @@ export const AdminUsersView: React.FC = () => {
               <th className="py-3.5 px-6 font-semibold text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/80 text-slate-300">
+          <tbody className="divide-y divide-slate-100 text-slate-700">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-800/40 transition">
+              <tr key={u.id} className="hover:bg-slate-50 transition">
                 <td className="py-4 px-6">
-                  <div className="font-semibold text-white">{u.name}</div>
-                  <div className="text-slate-400 font-mono text-[11px]">{u.email}</div>
+                  <div className="font-semibold text-slate-900">{u.name}</div>
+                  <div className="text-slate-500 font-mono text-[11px]">{u.email}</div>
                 </td>
                 <td className="py-4 px-6">
-                  <span className="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-slate-800 text-emerald-400 border border-slate-700">
+                  <span className="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200">
                     {u.role}
                   </span>
                 </td>
-                <td className="py-4 px-6 text-slate-400">
+                <td className="py-4 px-6 text-slate-600">
                   {u.accounts.join(', ')}
                 </td>
                 <td className="py-4 px-6">
-                  <span className="flex items-center space-x-1.5 text-emerald-400 font-medium">
+                  <span className="flex items-center space-x-1.5 text-emerald-600 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Active</span>
                   </span>
                 </td>
                 <td className="py-4 px-6 text-right">
-                  <button className="text-slate-400 hover:text-white font-medium">Edit Permissions</button>
+                  <button className="text-indigo-600 hover:text-indigo-800 font-medium">Edit Permissions</button>
                 </td>
               </tr>
             ))}
