@@ -3,9 +3,10 @@ import {
   Search, Sparkles, Image as ImageIcon, Mic, Video, Globe2,
   CheckCircle2, AlertTriangle, XCircle, HelpCircle, ExternalLink,
   Layers, ShieldCheck, RefreshCw, UploadCloud,
-  Check, Info, X, BookOpen, Clock, Building
+  Check, Info, X, BookOpen, Clock, Building, Play, Tv
 } from 'lucide-react';
 import { api, UnifiedSearchOptions } from '../services/api';
+import { ContentViewer } from '../components/content';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English (Global)' },
@@ -633,9 +634,19 @@ export const DiscoveryView: React.FC = () => {
                             setActiveModalArticle(src);
                           }}
                           className="flex items-center space-x-1.5 font-semibold text-emerald-400 hover:text-emerald-300 transition bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-md"
+                          title={src.url && (src.url.includes('youtube.com') || src.url.includes('youtu.be')) ? 'Watch YouTube Video In-App' : 'Read Clean Article In-App'}
                         >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>View Full Intel</span>
+                          {src.url && (src.url.includes('youtube.com') || src.url.includes('youtu.be')) ? (
+                            <>
+                              <Play className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                              <span>Watch In-App</span>
+                            </>
+                          ) : (
+                            <>
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>Read In-App</span>
+                            </>
+                          )}
                         </button>
 
                         <a
@@ -659,108 +670,17 @@ export const DiscoveryView: React.FC = () => {
         </div>
       )}
 
-      {/* ARTICLE INTEL MODAL / IN-DEPTH IN-APP READER DRAWER */}
+      {/* IN-APP CONTENT INGESTION & MEDIA / ARTICLE VIEWER MODAL */}
       {activeModalArticle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div
-            className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setActiveModalArticle(null)}
-              className="absolute top-6 right-6 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Modal Header */}
-            <div className="space-y-3 pr-10">
-              <div className="flex items-center space-x-2 text-xs">
-                <span className="font-bold text-white bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md">
-                  {activeModalArticle.source}
-                </span>
-                <span
-                  className={`px-2.5 py-1 rounded text-xs font-bold ${
-                    activeModalArticle.source_tier === 1
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : activeModalArticle.source_tier === 2
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                  }`}
-                >
-                  {activeModalArticle.tier_label || `Tier ${activeModalArticle.source_tier || 2}`}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-400 font-mono text-xs">
-                  {Math.round((activeModalArticle.credibility_score || 0.80) * 100)}% Credibility Score
-                </span>
-              </div>
-
-              <h2 className="text-xl md:text-2xl font-bold text-white leading-snug">
-                {activeModalArticle.title}
-              </h2>
-            </div>
-
-            {/* Content & Intelligence Breakdown */}
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  <BookOpen className="w-4 h-4" />
-                  <span>Full Extracted Reporting & Context</span>
-                </div>
-                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-                  {activeModalArticle.snippet || `Full reporting on ${activeModalArticle.title}. Published by ${activeModalArticle.source}.`}
-                </p>
-              </div>
-
-              {/* Source Verification Criteria */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <div className="text-xs font-bold text-slate-400 flex items-center space-x-1.5">
-                    <Building className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Domain & Outlet Standards</span>
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    {activeModalArticle.tier_description || 'Standard editorial verification and domain review.'}
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <div className="text-xs font-bold text-slate-400 flex items-center space-x-1.5">
-                    <Clock className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Discovery & Publishing Metadata</span>
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    Discovered: {activeModalArticle.discovered_at ? new Date(activeModalArticle.discovered_at).toLocaleString() : 'Live Ingestion'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer Link */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setActiveModalArticle(null)}
-                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition"
-              >
-                Close View
-              </button>
-
-              <a
-                href={activeModalArticle.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-lg"
-              >
-                <span>Visit Original Publisher Site</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-        </div>
+        <ContentViewer
+          url={activeModalArticle.url}
+          title={activeModalArticle.title}
+          snippet={activeModalArticle.snippet}
+          source={activeModalArticle.source}
+          sourceTier={activeModalArticle.source_tier}
+          credibilityScore={activeModalArticle.credibility_score}
+          onClose={() => setActiveModalArticle(null)}
+        />
       )}
     </div>
   );

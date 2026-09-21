@@ -7,11 +7,12 @@ import {
   BookOpen, Clock, Building, Compass, MessageSquare, ChevronRight,
   Copy, ArrowDown, User, Bot, Search, FileText, CheckCircle,
   Folder, Cpu, MoreHorizontal, PanelLeft, PanelLeftClose, Trash2,
-  BookMarked, Edit3, Plus, Library, Menu
+  BookMarked, Edit3, Plus, Library, Menu, Play, Tv
 } from 'lucide-react';
 import { api, UnifiedSearchOptions } from '../services/api';
 import { UserRole } from '../types';
 import { MediaAutomationBackground } from '../components/MediaAutomationBackground';
+import { ContentViewer } from '../components/content';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English (Global)' },
@@ -931,9 +932,19 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                                   <button
                                     onClick={() => setActiveModalArticle(src)}
                                     className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition flex items-center space-x-1 cursor-pointer font-medium"
+                                    title={src.url && (src.url.includes('youtube.com') || src.url.includes('youtu.be')) ? 'Watch YouTube Video In-App' : 'Read Clean Article In-App'}
                                   >
-                                    <BookOpen className="w-3 h-3" />
-                                    <span>Read In-App</span>
+                                    {src.url && (src.url.includes('youtube.com') || src.url.includes('youtu.be')) ? (
+                                      <>
+                                        <Play className="w-3 h-3 text-rose-600 fill-rose-600" />
+                                        <span>Watch In-App</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <BookOpen className="w-3 h-3 text-indigo-600" />
+                                        <span>Read In-App</span>
+                                      </>
+                                    )}
                                   </button>
                                   <a
                                     href={src.url}
@@ -1194,86 +1205,18 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
           </div>
         </div>
 
-        {/* In-App Article Modal Reader */}
-        <AnimatePresence>
-          {activeModalArticle && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-            >
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.96, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 10 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl"
-              >
-                {/* Modal Header */}
-                <div className="p-5 border-b border-slate-200 flex items-start justify-between bg-slate-50">
-                  <div className="space-y-1 pr-4">
-                    <div className="flex items-center space-x-2">
-                      {getTierBadge(activeModalArticle.source_tier)}
-                      <span className="text-xs text-slate-500 font-mono font-semibold">
-                        Score: {Math.round((activeModalArticle.credibility_score || 0.8) * 100)}%
-                      </span>
-                    </div>
-                    <h3 className="text-base md:text-lg font-bold text-slate-900 leading-snug">
-                      {activeModalArticle.title}
-                    </h3>
-                    <div className="text-xs text-slate-500 flex items-center space-x-2 font-medium">
-                      <span>Publisher: <strong className="text-slate-800">{activeModalArticle.source || activeModalArticle.domain}</strong></span>
-                      {activeModalArticle.published_at_raw && (
-                        <>
-                          <span>•</span>
-                          <span>{activeModalArticle.published_at_raw}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveModalArticle(null)}
-                    className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-600 hover:text-slate-900 cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-6 overflow-y-auto space-y-4 text-sm text-slate-700 leading-relaxed font-medium">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Article Excerpt</h4>
-                    <p className="text-slate-900 whitespace-pre-wrap">{activeModalArticle.snippet}</p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Source Credibility Rationale</h4>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {activeModalArticle.tier_description || 'Categorized based on editorial standards, domain reputation, and wire agency verification.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Modal Footer */}
-                <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 truncate max-w-sm font-mono">
-                    {activeModalArticle.url}
-                  </span>
-                  <a
-                    href={activeModalArticle.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center space-x-1.5 transition shadow-sm"
-                  >
-                    <span>Open Direct Article</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* In-App Content Ingestion & Media / Article Modal Reader */}
+        {activeModalArticle && (
+          <ContentViewer
+            url={activeModalArticle.url}
+            title={activeModalArticle.title}
+            snippet={activeModalArticle.snippet}
+            source={activeModalArticle.source || activeModalArticle.domain}
+            sourceTier={activeModalArticle.source_tier}
+            credibilityScore={activeModalArticle.credibility_score}
+            onClose={() => setActiveModalArticle(null)}
+          />
+        )}
 
       </div>
     </div>

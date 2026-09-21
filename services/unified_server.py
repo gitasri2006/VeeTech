@@ -30,6 +30,7 @@ logger = logging.getLogger("discovery.unified_gateway")
 # Service definitions: (name, relative_path, prefix)
 SERVICES = [
     ("extraction", "services/extraction/main.py", "/api/extraction"),
+    ("content_ingestion", "services/content_ingestion/router.py", "/api/content"),
     ("filtering", "services/filtering/main.py", "/api/filtering"),
     ("entity_profile", "services/entity-profile/main.py", "/api/entity-profile"),
     ("contextual_validation", "services/contextual-validation/main.py", "/api/contextual-validation"),

@@ -5,6 +5,7 @@ import {
 
 const API_BASE = {
   extraction: '/api/extraction',
+  content: '/api/content',
   filtering: '/api/filtering',
   entityProfile: '/api/entity-profile',
   contextualValidation: '/api/contextual-validation',
@@ -85,6 +86,26 @@ export class DiscoveryApiClient {
     } catch (e: any) {
       console.error('Unified discovery live service failure:', e);
       throw new Error(e.message || 'Live discovery service failed to respond. Please ensure discovery backend is running on port 8004.');
+    }
+  }
+
+  // Master Content Ingestion & In-App Media / Article Reader Preview
+  async getContentPreview(url: string, title?: string, snippet?: string, source?: string) {
+    try {
+      const params = new URLSearchParams({
+        url,
+        ...(title ? { title } : {}),
+        ...(snippet ? { snippet } : {}),
+        ...(source ? { source } : {}),
+      });
+      const res = await fetch(`${API_BASE.content}/preview?${params.toString()}`);
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.warn('Content preview fetch error:', e);
+      return null;
     }
   }
 
