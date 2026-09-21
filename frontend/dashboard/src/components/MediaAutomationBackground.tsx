@@ -87,12 +87,12 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
       canvas.parentElement.addEventListener('mouseleave', handleMouseLeave);
     }
 
-    // Palette: Emerald, Cyan, Teal, Slate
+    // Professional clean slate & indigo palette for white theme
     const colors = [
-      'rgba(16, 185, 129, ', // emerald-500
-      'rgba(6, 182, 212, ',  // cyan-500
-      'rgba(20, 184, 166, ', // teal-500
-      'rgba(59, 130, 246, ', // blue-500
+      'rgba(99, 102, 241, ',  // indigo-500
+      'rgba(79, 70, 229, ',   // indigo-600
+      'rgba(14, 165, 233, ',  // sky-500
+      'rgba(100, 116, 139, ', // slate-500
     ];
 
     let particles: Particle[] = [];
@@ -111,8 +111,8 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         particles.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * (isHub ? 0.35 : 0.65),
-          vy: (Math.random() - 0.5) * (isHub ? 0.35 : 0.65),
+          vx: (Math.random() - 0.5) * (isHub ? 0.3 : 0.5),
+          vy: (Math.random() - 0.5) * (isHub ? 0.3 : 0.5),
           radius: isHub ? Math.random() * 2 + 3 : Math.random() * 1.5 + 1.2,
           color: colors[Math.floor(Math.random() * colors.length)],
           isHub: isHub,
@@ -125,7 +125,7 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           labelPositions.push({
             text: MEDIA_AUTOMATION_LABELS[i % MEDIA_AUTOMATION_LABELS.length],
             nodeIdx: i * 3,
-            opacity: 0.45,
+            opacity: 0.5,
           });
         }
       }
@@ -141,10 +141,9 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
       ctx.clearRect(0, 0, width, height);
 
       // Spawn packets traveling between connected nodes
-      if (time - lastPacketTime > 400 && particles.length > 2) {
+      if (time - lastPacketTime > 450 && particles.length > 2) {
         lastPacketTime = time;
         const i1 = Math.floor(Math.random() * particles.length);
-        // Find a nearby node
         for (let j = 0; j < particles.length; j++) {
           if (i1 === j) continue;
           const dx = particles[i1].x - particles[j].x;
@@ -175,7 +174,7 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         if (p1.x < 0 || p1.x > width) p1.vx *= -1;
         if (p1.y < 0 || p1.y > height) p1.vy *= -1;
 
-        // Mouse interaction: push away or pull
+        // Mouse interaction
         const mdx = mouse.x - p1.x;
         const mdy = mouse.y - p1.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -185,7 +184,7 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           p1.y -= (mdy / mdist) * force;
         }
 
-        // Draw connections to nearby nodes
+        // Draw connections to nearby nodes (subtle gray/indigo lines)
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p1.x - p2.x;
@@ -193,29 +192,29 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < maxConnectionDistance) {
-            const alpha = (1 - dist / maxConnectionDistance) * 0.35;
+            const alpha = (1 - dist / maxConnectionDistance) * 0.22;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
-            ctx.lineWidth = 0.85;
+            ctx.strokeStyle = `rgba(148, 163, 184, ${alpha})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
 
         // Connection to mouse
         if (mdist < mouse.radius) {
-          const mouseAlpha = (1 - mdist / mouse.radius) * 0.55;
+          const mouseAlpha = (1 - mdist / mouse.radius) * 0.35;
           ctx.beginPath();
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(6, 182, 212, ${mouseAlpha})`;
-          ctx.lineWidth = 1.1;
+          ctx.strokeStyle = `rgba(99, 102, 241, ${mouseAlpha})`;
+          ctx.lineWidth = 1.0;
           ctx.stroke();
         }
       }
 
-      // Update & draw animated Data Packets (media pulse flow)
+      // Update & draw animated Data Packets (NO glowing blur)
       for (let k = packets.length - 1; k >= 0; k--) {
         const pkt = packets[k];
         pkt.progress += pkt.speed;
@@ -232,14 +231,12 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         const curX = pFrom.x + (pTo.x - pFrom.x) * pkt.progress;
         const curY = pFrom.y + (pTo.y - pFrom.y) * pkt.progress;
 
-        // Draw pulse glowing packet
+        // Clean solid crisp dot
         ctx.beginPath();
-        ctx.arc(curX, curY, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#38bdf8'; // light sky blue
-        ctx.shadowColor = '#06b6d4';
-        ctx.shadowBlur = 8;
+        ctx.arc(curX, curY, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#4f46e5'; // indigo-600
+        ctx.shadowBlur = 0; // Strictly no glow
         ctx.fill();
-        ctx.shadowBlur = 0; // reset
       }
 
       // Draw particle nodes & Hub radar waves
@@ -249,40 +246,32 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         // Draw node
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.isHub ? '#2dd4bf' : `${p.color}0.85)`;
+        ctx.fillStyle = p.isHub ? '#4f46e5' : `${p.color}0.65)`;
+        ctx.shadowBlur = 0; // Strictly no glow
         ctx.fill();
 
-        // Hub nodes emit expanding pulse rings (like the radar circle in user image)
+        // Hub nodes subtle pulse rings
         if (p.isHub) {
           p.pulsePhase = ((p.pulsePhase || 0) + 0.02) % (Math.PI * 2);
-          const ringRadius = p.radius + 6 + Math.sin(p.pulsePhase) * 6;
-          const ringAlpha = 0.4 * (1 - Math.sin(p.pulsePhase) * 0.5);
+          const ringRadius = p.radius + 5 + Math.sin(p.pulsePhase) * 4;
+          const ringAlpha = 0.25 * (1 - Math.sin(p.pulsePhase) * 0.5);
 
           ctx.beginPath();
           ctx.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(45, 212, 191, ${ringAlpha})`;
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-
-          // Second outer pulse ring
-          const outerRing = p.radius + 14 + Math.sin(p.pulsePhase + 1) * 8;
-          const outerAlpha = 0.25 * (1 - Math.sin(p.pulsePhase + 1) * 0.5);
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, outerRing, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(6, 182, 212, ${outerAlpha})`;
-          ctx.lineWidth = 0.75;
+          ctx.strokeStyle = `rgba(79, 70, 229, ${ringAlpha})`;
+          ctx.lineWidth = 1.0;
           ctx.stroke();
         }
       }
 
       // Draw subtle online media automation node labels
       if (showMediaLabels) {
-        ctx.font = '9px monospace';
+        ctx.font = '500 9px monospace';
         for (let l = 0; l < labelPositions.length; l++) {
           const item = labelPositions[l];
           const node = particles[item.nodeIdx % particles.length];
           if (node) {
-            ctx.fillStyle = 'rgba(45, 212, 191, 0.4)';
+            ctx.fillStyle = 'rgba(100, 116, 139, 0.6)';
             ctx.fillText(`[${item.text}]`, node.x + 8, node.y - 6);
           }
         }

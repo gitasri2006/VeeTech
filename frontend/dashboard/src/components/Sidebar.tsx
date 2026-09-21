@@ -45,14 +45,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'Fact-Check Review Queue',
           icon: CheckCheck,
           badge: pendingFactCheckCount > 0 ? pendingFactCheckCount : undefined,
-          badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+          badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
         },
         {
           id: 'whatsapp-moderation' as ViewType,
           label: 'WhatsApp Bot Moderation',
           icon: MessageSquare,
           badge: pendingWhatsAppCount > 0 ? pendingWhatsAppCount : undefined,
-          badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+          badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         },
       ],
     },
@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between h-[calc(100vh-4rem)] sticky top-16 select-none">
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-[calc(100vh-4rem)] sticky top-16 select-none shadow-sm">
       <div className="py-4 overflow-y-auto px-3 space-y-6">
         {sections.map((sec, idx) => (
           <div key={idx}>
@@ -85,12 +85,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => onSelectView(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition ${
                       isActive
-                        ? 'bg-emerald-600/15 text-emerald-400 border border-emerald-500/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
                       <span>{item.label}</span>
                     </div>
                     {(item as any).badge !== undefined && (
@@ -107,10 +107,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer System Info */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-400 flex items-center justify-between">
-        <span>Discovery v2.0.0</span>
-        <span className="text-emerald-500 flex items-center space-x-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1"></span>
+      <div className="p-4 border-t border-slate-200 bg-slate-50 text-[11px] text-slate-500 flex items-center justify-between">
+        <span className="font-medium text-slate-600">Discovery v2.0.0</span>
+        <span className="text-emerald-600 font-medium flex items-center space-x-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block mr-1"></span>
           <span>System Active</span>
         </span>
       </div>

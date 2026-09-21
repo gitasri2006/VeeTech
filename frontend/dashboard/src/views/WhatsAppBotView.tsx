@@ -72,15 +72,15 @@ export const WhatsAppBotView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       {/* Header */}
       <div>
-        <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
           <Smartphone className="w-4 h-4" />
           <span>Public Verification Bot</span>
         </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">WhatsApp Bot Moderation & Analytics Hub</h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">WhatsApp Bot Moderation & Analytics Hub</h1>
+        <p className="text-sm text-slate-600 mt-1">
           Monitor public verification volume, multilingual adoption, rate-limiting quotas, and analyst review of pending WhatsApp submissions.
         </p>
       </div>
@@ -88,28 +88,28 @@ export const WhatsAppBotView: React.FC = () => {
       {/* Analytics KPI Cards */}
       {analytics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-            <span className="text-xs text-slate-400 font-medium">Total Public Queries</span>
-            <div className="text-2xl font-bold text-white mt-1">{analytics.total_queries?.toLocaleString()}</div>
-            <span className="text-[11px] text-emerald-400 font-medium mt-1 block">≥ 1,000 / day SLA Met</span>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <span className="text-xs text-slate-500 font-medium">Total Public Queries</span>
+            <div className="text-2xl font-bold text-slate-900 mt-1">{analytics.total_queries?.toLocaleString()}</div>
+            <span className="text-[11px] text-emerald-600 font-medium mt-1 block">≥ 1,000 / day SLA Met</span>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-            <span className="text-xs text-slate-400 font-medium">Verified Direct Replies</span>
-            <div className="text-2xl font-bold text-emerald-400 mt-1">{analytics.verdict_breakdown?.Verified || 820}</div>
-            <span className="text-[11px] text-slate-400 mt-1 block">Immediate delivery &lt; 60s</span>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <span className="text-xs text-slate-500 font-medium">Verified Direct Replies</span>
+            <div className="text-2xl font-bold text-emerald-600 mt-1">{analytics.verdict_breakdown?.Verified || 820}</div>
+            <span className="text-[11px] text-slate-500 mt-1 block">Immediate delivery &lt; 60s</span>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-            <span className="text-xs text-slate-400 font-medium">Misinformation Flagged</span>
-            <div className="text-2xl font-bold text-rose-400 mt-1">{analytics.verdict_breakdown?.['Likely False'] || 230}</div>
-            <span className="text-[11px] text-slate-400 mt-1 block">Debunked with citations</span>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <span className="text-xs text-slate-500 font-medium">Misinformation Flagged</span>
+            <div className="text-2xl font-bold text-rose-600 mt-1">{analytics.verdict_breakdown?.['Likely False'] || 230}</div>
+            <span className="text-[11px] text-slate-500 mt-1 block">Debunked with citations</span>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-            <span className="text-xs text-slate-400 font-medium">Pending Human Reviews</span>
-            <div className="text-2xl font-bold text-amber-400 mt-1">{pendingQueue.length}</div>
-            <span className="text-[11px] text-amber-400/80 mt-1 block">Awaiting sign-off below</span>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <span className="text-xs text-slate-500 font-medium">Pending Human Reviews</span>
+            <div className="text-2xl font-bold text-amber-600 mt-1">{pendingQueue.length}</div>
+            <span className="text-[11px] text-amber-600 mt-1 block">Awaiting sign-off below</span>
           </div>
         </div>
       )}
@@ -117,40 +117,40 @@ export const WhatsAppBotView: React.FC = () => {
       {/* Moderation Queue & Simulator Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Pending WhatsApp Submissions Queue */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between">
             <span>WhatsApp Analyst Moderation Queue</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
               {pendingQueue.length} In Review
             </span>
           </h2>
 
           {pendingQueue.length === 0 ? (
-            <div className="text-center py-12 text-xs text-slate-400 space-y-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+            <div className="text-center py-12 text-xs text-slate-500 space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
               <span>No WhatsApp submissions currently waiting for human review.</span>
             </div>
           ) : (
             <div className="space-y-4">
               {pendingQueue.map((item) => (
-                <div key={item.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <div key={item.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-mono text-slate-400">User: {item.phone_number_hash.slice(0, 12)}... (Salted Hash)</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                    <span className="font-mono text-slate-600">User: {item.phone_number_hash.slice(0, 12)}... (Salted Hash)</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                       {item.verdict}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-200 bg-slate-900 p-3 rounded-lg border border-slate-800 font-mono">
+                  <p className="text-xs text-slate-800 bg-white p-3 rounded-lg border border-slate-200 font-mono">
                     "{item.raw_payload}"
                   </p>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
-                    <span className="text-slate-400">Status: <strong className="text-amber-400">Interim Notice Sent</strong></span>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+                    <span className="text-slate-500">Status: <strong className="text-amber-700">Interim Notice Sent</strong></span>
                     <button
                       onClick={handleApprove}
                       disabled={isApproving}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-1.5 px-4 rounded-lg flex items-center space-x-1.5 transition"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-1.5 px-4 rounded-lg flex items-center space-x-1.5 transition shadow-sm"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>{isApproving ? 'Sending...' : 'Approve & Dispatch WhatsApp Reply'}</span>
@@ -163,37 +163,37 @@ export const WhatsAppBotView: React.FC = () => {
         </div>
 
         {/* Right: Inbound WhatsApp Simulator */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-            <MessageSquare className="w-4 h-4 text-emerald-400" />
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+            <MessageSquare className="w-4 h-4 text-emerald-600" />
             <span>Interactive Inbound WhatsApp Bot Simulator</span>
           </h2>
 
           <form onSubmit={handleSimulate} className="space-y-4 text-xs">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Simulated User Phone Number (Hashed upon receipt)</label>
+              <label className="block text-slate-700 font-semibold mb-1">Simulated User Phone Number (Hashed upon receipt)</label>
               <input
                 type="text"
                 value={simPhone}
                 onChange={(e) => setSimPhone(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Submitted News / Claim / Forward Message</label>
+              <label className="block text-slate-700 font-semibold mb-1">Submitted News / Claim / Forward Message</label>
               <textarea
                 rows={3}
                 value={simText}
                 onChange={(e) => setSimText(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-slate-300 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSimulating}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center space-x-2 transition"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center space-x-2 transition shadow-sm"
             >
               <Send className="w-4 h-4" />
               <span>{isSimulating ? 'Processing Pipeline B...' : 'Submit Simulated WhatsApp Query'}</span>
@@ -202,9 +202,9 @@ export const WhatsAppBotView: React.FC = () => {
 
           {/* Simulator Response Preview */}
           {simResult && (
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <span className="font-bold text-emerald-400 block uppercase tracking-wider">Outbound WhatsApp Reply Message:</span>
-              <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-slate-200 whitespace-pre-line leading-relaxed">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <span className="font-bold text-emerald-700 block uppercase tracking-wider">Outbound WhatsApp Reply Message:</span>
+              <div className="p-3 bg-white rounded-lg border border-slate-200 font-mono text-slate-800 whitespace-pre-line leading-relaxed">
                 {simResult.message}
               </div>
             </div>

@@ -109,7 +109,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Navbar
         currentUser={currentUser}
         onRefresh={() => console.log('Refreshing pipeline state')}
@@ -133,7 +133,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        <main className="flex-1 overflow-y-auto bg-slate-950">
+        <main className="flex-1 overflow-y-auto bg-slate-50">
           {renderActiveView()}
         </main>
       </div>
