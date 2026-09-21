@@ -101,22 +101,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Optional Admin Console Toggle */}
-        {onToggleAdminSidebar && (
-          <button
-            onClick={onToggleAdminSidebar}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center space-x-1.5 transition ${
-              showAdminSidebar
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-            title="Toggle Internal Diagnostics & Navigation Sidebar"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Internal Console</span>
-          </button>
-        )}
-
         {/* User Account Info Chip */}
         {currentUser && (
           <button

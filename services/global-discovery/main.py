@@ -115,6 +115,13 @@ class DiscoveryScope(BaseModel):
     recency_window: str = Field(default="30d")
     languages: List[str] = Field(default_factory=lambda: ["all"])
     platforms: List[str] = Field(default_factory=lambda: ["web", "x", "youtube", "telegram"])
+    min_tier: Optional[int] = None
+    allowed_domains: Optional[List[str]] = None
+    blocked_domains: Optional[List[str]] = None
+    must_include: Optional[List[str]] = None
+    must_not_include: Optional[List[str]] = None
+    rule_id: Optional[str] = None
+    rule_name: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -692,6 +699,44 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
 
     tracer.log_step("DiscoveryFanOut", "LiveMultiSourceAdapters", {"queries": search_queries, "relevant_count": len(unique_candidates)}, f"Retrieved {len(unique_candidates)} relevant candidates", f"Strict topic filtering applied for: {target_terms}")
 
+    # 4.2 Custom User-Defined Rule Filtering (Optional active rule)
+    if request.scope and (request.scope.rule_id or request.scope.min_tier or request.scope.allowed_domains or request.scope.blocked_domains or request.scope.must_not_include):
+        filtered_by_rule = []
+        for cand in unique_candidates:
+            cand_domain = (cand.get("domain") or "").lower()
+            cand_tier = cand.get("source_tier", 2)
+            cand_text = f"{cand.get('title', '')} {cand.get('snippet', '')}".lower()
+
+            # Min Tier filter
+            if request.scope.min_tier and cand_tier > request.scope.min_tier:
+                continue
+            # Allowed Domains filter
+            if request.scope.allowed_domains and request.scope.allowed_domains != ["all"]:
+                if not any(d.lower() in cand_domain for d in request.scope.allowed_domains if d.strip()):
+                    continue
+            # Blocked Domains filter
+            if request.scope.blocked_domains:
+                if any(d.lower() in cand_domain for d in request.scope.blocked_domains if d.strip()):
+                    continue
+            # Must Not Include boolean exclusion
+            if request.scope.must_not_include:
+                if any(term.lower() in cand_text for term in request.scope.must_not_include if term.strip()):
+                    continue
+            # Must Include boolean terms
+            if request.scope.must_include:
+                if not any(term.lower() in cand_text for term in request.scope.must_include if term.strip()):
+                    continue
+
+            filtered_by_rule.append(cand)
+
+        if filtered_by_rule:
+            unique_candidates = filtered_by_rule
+            tracer.log_step("RuleEngine", "DeterministicRuleFilter", {
+                "rule_id": request.scope.rule_id,
+                "rule_name": request.scope.rule_name,
+                "retained_candidates": len(unique_candidates)
+            }, f"Applied user rule '{request.scope.rule_name or request.scope.rule_id}': retained {len(unique_candidates)} candidates matching rule criteria", "Filtered strictly according to user rule")
+
     # 5. Deep Web Extraction via Playwright for Top News URLs with Short Snippets
     deep_scraped_count = 0
     scrape_targets = [
@@ -934,6 +979,7 @@ async def login_endpoint(req: LoginRequest):
     raise HTTPException(status_code=401, detail="Invalid email or password. Default test password is 'password'.")
 
 
+@app.get("/history", tags=["History"])
 @app.get("/api/discovery/history", tags=["History"])
 async def get_history_endpoint(email: str):
     history = db.get_user_history(email.strip().lower())
@@ -945,12 +991,14 @@ class HistoryItemRequest(BaseModel):
     item: Dict[str, Any]
 
 
+@app.post("/history", tags=["History"])
 @app.post("/api/discovery/history", tags=["History"])
 async def save_history_endpoint(req: HistoryItemRequest):
     db.save_user_history_item(req.email.strip().lower(), req.item)
     return {"success": True}
 
 
+@app.delete("/history", tags=["History"])
 @app.delete("/api/discovery/history", tags=["History"])
 async def delete_history_endpoint(email: str, session_id: Optional[str] = None):
     email_clean = email.strip().lower()

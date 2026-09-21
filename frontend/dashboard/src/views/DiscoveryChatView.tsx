@@ -7,12 +7,13 @@ import {
   BookOpen, Clock, Building, Compass, MessageSquare, ChevronRight,
   Copy, ArrowDown, User, Bot, Search, FileText, CheckCircle,
   Folder, Cpu, MoreHorizontal, PanelLeft, PanelLeftClose, Trash2,
-  BookMarked, Edit3, Plus, Library, Menu, Play, Tv
+  BookMarked, Edit3, Plus, Library, Menu, Play, Tv, Eye, SlidersHorizontal
 } from 'lucide-react';
 import { api, UnifiedSearchOptions } from '../services/api';
-import { UserRole } from '../types';
+import { UserRole, Rule } from '../types';
 import { MediaAutomationBackground } from '../components/MediaAutomationBackground';
 import { ContentViewer } from '../components/content';
+import { AgentInspectorModal } from '../components/AgentInspectorModal';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English (Global)' },
@@ -142,6 +143,10 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
     modality: 'image' | 'audio' | 'video';
   } | null>(null);
 
+  const [availableRules, setAvailableRules] = useState<Rule[]>([]);
+  const [selectedRuleId, setSelectedRuleId] = useState<string>('');
+  const [inspectingTurn, setInspectingTurn] = useState<ChatTurn | null>(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [pipelineStepIndex, setPipelineStepIndex] = useState<number>(1);
   const [activeStep, setActiveStep] = useState<string>('');
@@ -152,6 +157,16 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    api.listRules()
+      .then((rList) => {
+        if (Array.isArray(rList)) {
+          setAvailableRules(rList);
+        }
+      })
+      .catch((err) => console.warn('Rule fetch notice:', err));
+  }, []);
 
   useEffect(() => {
     let interval: any;
@@ -296,6 +311,19 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
       }
     });
 
+    const activeRule = availableRules.find((r) => r.id === selectedRuleId);
+    const customScope = activeRule ? {
+      min_tier: activeRule.min_source_tier,
+      allowed_domains: activeRule.domain_rules?.allowed_domains,
+      blocked_domains: activeRule.domain_rules?.blocked_domains,
+      recency_window: activeRule.recency_window,
+      must_include: activeRule.boolean_terms?.must_include,
+      must_not_include: activeRule.boolean_terms?.must_not_include,
+      geography: activeRule.geo_filter?.countries || ['global'],
+      rule_id: activeRule.id,
+      rule_name: activeRule.name || activeRule.id,
+    } : undefined;
+
     const searchOptions: UnifiedSearchOptions = {
       query: effectiveQuery || undefined,
       inputModality: currentModality,
@@ -305,6 +333,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
       mediaMimeType: currentAttachment?.mimeType,
       conversationHistory: conversationHistory.length > 0 ? conversationHistory : undefined,
       previousSources: previousSources.length > 0 ? previousSources.slice(-20) : undefined,
+      scope: customScope,
     };
 
     try {
@@ -723,8 +752,16 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                         </h2>
                       </div>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
                         {getVerdictBadge(intel?.authenticity_verdict)}
+                        <button
+                          onClick={() => setInspectingTurn(msg)}
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition cursor-pointer shadow-sm"
+                          title="Inspect Full Multi-Agent Pipeline, OCR/ASR, and Evidence Analysis"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Inspect</span>
+                        </button>
                         <button
                           onClick={() => copyToClipboard(intel?.executive_summary || '', msg.id)}
                           className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition cursor-pointer border border-slate-200"
@@ -1104,6 +1141,25 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
             </div>
           )}
 
+          {/* Active Custom Rule Banner if chosen */}
+          {selectedRuleId && (
+            <div className="mb-2 p-2 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between text-xs max-w-xl shadow-sm">
+              <div className="flex items-center space-x-2 text-indigo-800">
+                <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+                <span className="font-semibold">
+                  Active Filter Rule: {availableRules.find((r) => r.id === selectedRuleId)?.name || selectedRuleId}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedRuleId('')}
+                className="p-1 hover:bg-indigo-100 rounded text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                title="Remove rule filter and return to global search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="bg-white border border-slate-300 rounded-2xl p-2.5 focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600 shadow-sm transition-all">
             <textarea
               ref={textareaRef}
@@ -1114,6 +1170,8 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
               placeholder={
                 attachedFile
                   ? `Add notes or ask a question regarding ${attachedFile.name}...`
+                  : selectedRuleId
+                  ? `Search using active rule '${availableRules.find((r) => r.id === selectedRuleId)?.name || selectedRuleId}'...`
                   : 'Search or ask your question... (e.g. Tata Motors EV, ISRO Gaganyaan, Apple)'
               }
               className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 resize-none focus:outline-none px-2 py-1 font-medium"
@@ -1121,8 +1179,8 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-1">
               
-              {/* Left Tools: Modality Uploads & Language Selector */}
-              <div className="flex items-center space-x-2">
+              {/* Left Tools: Modality Uploads, Language Selector, & Rule Filter */}
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1184,7 +1242,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                 </button>
 
                 {/* Target Language Dropdown */}
-                <div className="flex items-center space-x-1.5 pl-2 border-l border-slate-200">
+                <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
                   <Globe2 className="w-3.5 h-3.5 text-indigo-600" />
                   <select
                     value={targetLanguage}
@@ -1194,6 +1252,26 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                     {SUPPORTED_LANGUAGES.map((lang) => (
                       <option key={lang.code} value={lang.code}>
                         {lang.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Custom User Rule Selector (Optional) */}
+                <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                  <select
+                    value={selectedRuleId}
+                    onChange={(e) => setSelectedRuleId(e.target.value)}
+                    className={`border text-xs font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-600 max-w-[160px] truncate ${
+                      selectedRuleId ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold' : 'bg-slate-100 border-slate-200 text-slate-700'
+                    }`}
+                    title="Optional: Select a created rule to filter search results strictly according to rule criteria"
+                  >
+                    <option value="">🌐 Global (No Rule)</option>
+                    {availableRules.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        ⚡ {r.name || r.id}
                       </option>
                     ))}
                   </select>
@@ -1212,6 +1290,14 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
             </div>
           </div>
         </div>
+
+        {/* Multi-Agent Full Analysis Inspector Modal */}
+        {inspectingTurn && (
+          <AgentInspectorModal
+            turn={inspectingTurn}
+            onClose={() => setInspectingTurn(null)}
+          />
+        )}
 
         {/* In-App Content Ingestion & Media / Article Modal Reader */}
         {activeModalArticle && (

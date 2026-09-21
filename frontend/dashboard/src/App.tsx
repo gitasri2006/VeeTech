@@ -113,26 +113,12 @@ export const App: React.FC = () => {
       <Navbar
         currentUser={currentUser}
         onRefresh={() => console.log('Refreshing pipeline state')}
-        showAdminSidebar={showAdminSidebar}
-        onToggleAdminSidebar={() => setShowAdminSidebar(!showAdminSidebar)}
-        onOpenSettings={() => {
-          setCurrentView('settings');
-          setShowAdminSidebar(true);
-        }}
+        onOpenSettings={() => setCurrentView('settings')}
         onResetToChat={() => setCurrentView('discovery')}
         onLogout={handleLogout}
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {showAdminSidebar && (
-          <Sidebar
-            currentView={currentView}
-            onSelectView={setCurrentView}
-            pendingFactCheckCount={2}
-            pendingWhatsAppCount={2}
-          />
-        )}
-
         <main className="flex-1 overflow-y-auto bg-slate-50">
           {renderActiveView()}
         </main>

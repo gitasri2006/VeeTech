@@ -34,6 +34,7 @@ export interface Entity {
 
 export interface Rule {
   id: string;
+  name?: string;
   entity_id: string;
   geo_filter: {
     countries?: string[];
