@@ -1038,10 +1038,15 @@ async def save_history_endpoint(req: HistoryItemRequest):
 
 @app.delete("/history", tags=["History"])
 @app.delete("/api/discovery/history", tags=["History"])
-async def delete_history_endpoint(email: str, session_id: Optional[str] = None):
+async def delete_history_endpoint(
+    email: str,
+    session_id: Optional[str] = None,
+    id: Optional[str] = None
+):
     email_clean = email.strip().lower()
-    if session_id:
-        db.delete_user_history_item(email_clean, session_id)
+    target_id = session_id or id
+    if target_id:
+        db.delete_user_history_item(email_clean, target_id)
     else:
         db.clear_user_history(email_clean)
     return {"success": True}

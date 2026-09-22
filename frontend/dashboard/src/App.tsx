@@ -123,12 +123,25 @@ export const App: React.FC = () => {
     setCurrentView('story-detail');
   };
 
+  const handleSaveOrUpdateSession = (updatedSession: InquirySession) => {
+    setSessions((prev) => {
+      const idx = prev.findIndex((s) => s.id === updatedSession.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updatedSession;
+        return copy;
+      } else {
+        return [updatedSession, ...prev];
+      }
+    });
+  };
+
   const handleDeleteSession = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     const updated = sessions.filter((s) => s.id !== id);
     setSessions(updated);
     if (currentUser?.email) {
-      fetch(`/api/discovery/history?email=${encodeURIComponent(currentUser.email)}&id=${encodeURIComponent(id)}`, {
+      fetch(`/api/discovery/history?email=${encodeURIComponent(currentUser.email)}&session_id=${encodeURIComponent(id)}&id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
       }).catch(() => {});
     }
@@ -181,6 +194,7 @@ export const App: React.FC = () => {
             activeSessionId={activeSessionId}
             sessions={sessions}
             onUpdateSessions={(updated) => setSessions(updated)}
+            onSaveOrUpdateSession={handleSaveOrUpdateSession}
             newInquiryTrigger={newInquiryTrigger}
             onNewInquiry={handleNewInquiry}
             isSidebarOpen={isSidebarOpen}
@@ -242,6 +256,7 @@ export const App: React.FC = () => {
             activeSessionId={activeSessionId}
             sessions={sessions}
             onUpdateSessions={(updated) => setSessions(updated)}
+            onSaveOrUpdateSession={handleSaveOrUpdateSession}
             newInquiryTrigger={newInquiryTrigger}
             onNewInquiry={handleNewInquiry}
             isSidebarOpen={isSidebarOpen}

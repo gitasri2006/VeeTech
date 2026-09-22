@@ -83,6 +83,7 @@ export interface DiscoveryChatViewProps {
   activeSessionId?: string;
   sessions?: InquirySession[];
   onUpdateSessions?: (updated: InquirySession[]) => void;
+  onSaveOrUpdateSession?: (session: InquirySession) => void;
   newInquiryTrigger?: number;
   onNewInquiry?: () => void;
   isSidebarOpen?: boolean;
@@ -97,6 +98,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   activeSessionId: propActiveSessionId,
   sessions: propSessions,
   onUpdateSessions,
+  onSaveOrUpdateSession,
   newInquiryTrigger,
   onNewInquiry,
   isSidebarOpen = true,
@@ -145,15 +147,27 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   const sessions = propSessions || [];
 
   useEffect(() => {
-    if (activeSessionId && sessions.length > 0) {
+    if (activeSessionId) {
       const found = sessions.find((s) => s.id === activeSessionId);
       if (found) {
         setMessages(found.messages || []);
-        setInputQuery('');
-        setAttachedFile(null);
+      } else {
+        setMessages([]);
+      }
+      setInputQuery('');
+      setAttachedFile(null);
+    }
+  }, [activeSessionId]);
+
+  // Sync if current active session was loaded/updated from server and messages are empty
+  useEffect(() => {
+    if (activeSessionId && sessions.length > 0) {
+      const found = sessions.find((s) => s.id === activeSessionId);
+      if (found && found.messages && found.messages.length > 0) {
+        setMessages((prev) => (prev.length === 0 ? found.messages : prev));
       }
     }
-  }, [activeSessionId, sessions]);
+  }, [sessions, activeSessionId]);
 
   useEffect(() => {
     if (newInquiryTrigger && newInquiryTrigger > 0) {
@@ -321,29 +335,22 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
     setIsProcessing(true);
 
     const sessId = targetSessId || activeSessionId;
-    if (onUpdateSessions) {
-      const existing = sessions.find((s) => s.id === sessId);
-      if (existing) {
-        onUpdateSessions(
-          sessions.map((s) =>
-            s.id === sessId
-              ? {
-                  ...s,
-                  title: s.title === 'New Inquiry' ? effectiveQuery || currentAttachment?.name || 'Inquiry' : s.title,
-                  messages: newMessages,
-                }
-              : s
-          )
-        );
-      } else {
-        const newSession: InquirySession = {
-          id: sessId,
-          title: effectiveQuery || currentAttachment?.name || 'Inquiry',
-          timestamp: 'Just now',
-          messages: newMessages,
-        };
-        onUpdateSessions([newSession, ...sessions]);
-      }
+    const existingSession = sessions.find((s) => s.id === sessId);
+    const sessionTitle = (existingSession && existingSession.title && existingSession.title !== 'New Inquiry')
+      ? existingSession.title
+      : (effectiveQuery || currentAttachment?.name || 'Inquiry');
+
+    const startSessionObj: InquirySession = {
+      id: sessId,
+      title: sessionTitle,
+      timestamp: 'Just now',
+      messages: newMessages,
+    };
+
+    if (onSaveOrUpdateSession) {
+      onSaveOrUpdateSession(startSessionObj);
+    } else if (onUpdateSessions) {
+      onUpdateSessions([startSessionObj, ...sessions.filter((s) => s.id !== sessId)]);
     }
 
     const conversationHistory: { role: string; content: string }[] = [];
@@ -434,25 +441,26 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
       const finalMessages = [...newMessages, assistantTurn];
       setMessages(finalMessages);
 
-      if (onUpdateSessions) {
-        onUpdateSessions(
-          sessions.map((s) => (s.id === sessId ? { ...s, messages: finalMessages } : s))
-        );
+      const endSessionObj: InquirySession = {
+        id: sessId,
+        title: sessionTitle,
+        timestamp: 'Today',
+        messages: finalMessages,
+      };
+
+      if (onSaveOrUpdateSession) {
+        onSaveOrUpdateSession(endSessionObj);
+      } else if (onUpdateSessions) {
+        onUpdateSessions([endSessionObj, ...sessions.filter((s) => s.id !== sessId)]);
       }
 
       if (currentUser?.email) {
-        const itemToSave = {
-          id: sessId,
-          title: effectiveQuery || 'New Inquiry',
-          timestamp: 'Today',
-          messages: finalMessages,
-        };
         fetch('/api/discovery/history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: currentUser.email,
-            item: itemToSave,
+            item: endSessionObj,
           }),
         }).catch(() => {});
       }
