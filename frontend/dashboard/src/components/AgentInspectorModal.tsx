@@ -358,34 +358,34 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
 
           {/* TAB 4: TRACE */}
           {activeTab === 'trace' && (
-            <div className="bg-slate-900 text-slate-100 rounded-xl p-5 font-mono text-xs shadow-inner space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center space-x-2 text-indigo-400 font-bold">
-                  <Terminal className="w-4 h-4" />
+            <div className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl p-5 font-mono text-xs shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div className="flex items-center space-x-2 text-indigo-700 font-bold">
+                  <Terminal className="w-4 h-4 text-indigo-600" />
                   <span>Execution Audit Trace</span>
                 </div>
-                <span className="text-[11px] text-slate-400">Trace ID: {trace.request_id || 'live-trace'}</span>
+                <span className="text-[11px] text-slate-500 font-semibold">Trace ID: {trace.request_id || 'live-trace'}</span>
               </div>
               
               <div className="space-y-3">
                 {trace.steps && trace.steps.length > 0 ? (
                   trace.steps.map((st: any, i: number) => (
-                    <div key={i} className="border-l-2 border-indigo-500 pl-3 py-1 space-y-1">
+                    <div key={i} className="border-l-2 border-indigo-600 pl-3 py-1 space-y-1 bg-white p-2.5 rounded-r-lg border border-slate-200">
                       <div className="flex items-center space-x-2">
-                        <span className="text-emerald-400 font-bold">[{st.agent || st.step}]</span>
-                        <span className="text-slate-400 text-[11px]">{st.action}</span>
+                        <span className="text-indigo-700 font-bold">[{st.agent || st.step}]</span>
+                        <span className="text-slate-500 text-[11px] font-medium">{st.action}</span>
                       </div>
-                      <p className="text-slate-200 text-[11px]">{st.result}</p>
-                      {st.decision && <p className="text-slate-400 text-[10px]">Decision: {st.decision}</p>}
+                      <p className="text-slate-800 text-[11px] font-medium">{st.result}</p>
+                      {st.decision && <p className="text-slate-500 text-[10px]">Decision: {st.decision}</p>}
                     </div>
                   ))
                 ) : (
-                  <div className="space-y-2 text-slate-300">
-                    <p className="text-emerald-400">✓ [MultimodalAgent] Analyzed media input and generated contextual entities.</p>
-                    <p className="text-indigo-400">✓ [InvestigationPlanner] Formulated 4 search hypotheses with zero-hallucination guardrails.</p>
-                    <p className="text-blue-400">✓ [DiscoveryFanOut] Retrieved {sources.length} sources from live web, news wires, and registries.</p>
-                    <p className="text-purple-400">✓ [FactVerificationAgent] Audited claims with Google FactCheck Tools API & Serper debunks.</p>
-                    <p className="text-teal-400">✓ [IntelligenceSynthesizer] Grounded final multi-source dossier in {results.target_language || 'en'}.</p>
+                  <div className="space-y-2 text-slate-700 bg-white p-3 rounded-lg border border-slate-200">
+                    <p className="text-emerald-700 font-medium">✓ [MultimodalAgent] Analyzed media input and generated contextual entities.</p>
+                    <p className="text-indigo-700 font-medium">✓ [InvestigationPlanner] Formulated search hypotheses with zero-hallucination guardrails.</p>
+                    <p className="text-blue-700 font-medium">✓ [DiscoveryFanOut] Retrieved {sources.length} sources from live web, news wires, and registries.</p>
+                    <p className="text-purple-700 font-medium">✓ [FactVerificationAgent] Audited claims with Google FactCheck Tools API & Serper debunks.</p>
+                    <p className="text-teal-700 font-medium">✓ [IntelligenceSynthesizer] Grounded final multi-source dossier in {results.target_language || 'en'}.</p>
                   </div>
                 )}
               </div>
@@ -395,11 +395,11 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500 font-medium">
           <span>Discovery Autonomous Intelligence Core • Zero-Hallucination Grounding</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition cursor-pointer shadow-sm"
           >
             Close Inspector
           </button>

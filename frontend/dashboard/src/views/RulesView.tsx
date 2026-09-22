@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { SlidersHorizontal, Sparkles, Play, CheckCircle2, XCircle, AlertCircle, BarChart2 } from 'lucide-react';
+import { SlidersHorizontal, Sparkles, Play, CheckCircle2, XCircle, AlertCircle, BarChart2, ArrowLeft, Menu } from 'lucide-react';
 import { api } from '../services/api';
 
-export const RulesView: React.FC = () => {
+interface RulesViewProps {
+  onBack?: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: (open: boolean) => void;
+}
+
+export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = true, onToggleSidebar }) => {
   const [nlPrompt, setNlPrompt] = useState('Monitor all Tier 1 and Tier 2 news from India within 48 hours excluding sports');
   const [minTier, setMinTier] = useState(2);
   const [recencyWindow, setRecencyWindow] = useState('48h');
@@ -36,9 +42,30 @@ export const RulesView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 text-slate-900 min-h-screen font-sans">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 text-slate-900 font-sans w-full">
       {/* Header */}
       <div>
+        <div className="flex items-center space-x-3 mb-2">
+          {!isSidebarOpen && onToggleSidebar && (
+            <button
+              onClick={() => onToggleSidebar(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition shadow-xs cursor-pointer"
+              title="Open Menu"
+            >
+              <Menu className="w-4 h-4 text-indigo-600" />
+              <span className="text-xs font-semibold">Open Menu</span>
+            </button>
+          )}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Discovery Search</span>
+            </button>
+          )}
+        </div>
         <div className="flex items-center space-x-2 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
           <SlidersHorizontal className="w-4 h-4" />
           <span>Configurable Rule Engine & Sandbox</span>

@@ -7,13 +7,15 @@ import {
   BookOpen, Clock, Building, Compass, MessageSquare, ChevronRight,
   Copy, ArrowDown, User, Bot, Search, FileText, CheckCircle,
   Folder, Cpu, MoreHorizontal, PanelLeft, PanelLeftClose, Trash2,
-  BookMarked, Edit3, Plus, Library, Menu, Play, Tv, Eye, SlidersHorizontal
+  BookMarked, Edit3, Plus, Library, Menu, Play, Tv, Eye, SlidersHorizontal,
+  Settings, MapPin
 } from 'lucide-react';
 import { api, UnifiedSearchOptions } from '../services/api';
 import { UserRole, Rule } from '../types';
 import { MediaAutomationBackground } from '../components/MediaAutomationBackground';
 import { ContentViewer } from '../components/content';
 import { AgentInspectorModal } from '../components/AgentInspectorModal';
+import { Interactive3DGlobe } from '../components/Interactive3DGlobe';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English (Global)' },
@@ -72,69 +74,56 @@ export interface DiscoveryChatViewProps {
     email: string;
     role: UserRole;
   } | null;
+  activeSessionId?: string;
+  sessions?: InquirySession[];
+  onUpdateSessions?: (updated: InquirySession[]) => void;
+  newInquiryTrigger?: number;
+  onNewInquiry?: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: (open: boolean) => void;
+  onOpenSettings?: () => void;
+  onOpenRules?: () => void;
 }
 
-export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUser }) => {
+export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
+  currentUser,
+  activeSessionId: propActiveSessionId,
+  sessions: propSessions,
+  onUpdateSessions,
+  newInquiryTrigger,
+  onNewInquiry,
+  isSidebarOpen = true,
+  onToggleSidebar,
+  onOpenSettings,
+  onOpenRules,
+}) => {
   const [messages, setMessages] = useState<ChatTurn[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'audio' | 'video'>('text');
   
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [historySearchQuery, setHistorySearchQuery] = useState('');
-  const [showHistorySearch, setShowHistorySearch] = useState(false);
-  const [activeSessionId, setActiveSessionId] = useState<string>('sess-1');
+  const activeSessionId = propActiveSessionId || 'sess-1';
+  const sessions = propSessions || [];
 
-  const userKey = currentUser?.email ? currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'default';
-
-  const [sessions, setSessions] = useState<InquirySession[]>(() => {
-    try {
-      const emailKey = currentUser?.email ? currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'default';
-      const saved = localStorage.getItem(`discovery_history_${emailKey}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+  useEffect(() => {
+    if (activeSessionId && sessions.length > 0) {
+      const found = sessions.find((s) => s.id === activeSessionId);
+      if (found) {
+        setMessages(found.messages || []);
+        setInputQuery('');
+        setAttachedFile(null);
       }
-    } catch (e) {
-      console.error('Error loading search history', e);
     }
-    return [];
-  });
+  }, [activeSessionId, sessions]);
 
   useEffect(() => {
-    const emailKey = currentUser?.email ? currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'default';
-    const localSaved = localStorage.getItem(`discovery_history_${emailKey}`);
-    if (localSaved) {
-      try {
-        const parsed = JSON.parse(localSaved);
-        if (Array.isArray(parsed)) setSessions(parsed);
-      } catch (e) {}
-    } else {
-      setSessions([]);
+    if (newInquiryTrigger && newInquiryTrigger > 0) {
+      setMessages([]);
+      setInputQuery('');
+      setAttachedFile(null);
+      setSelectedModality('text');
     }
-
-    if (currentUser?.email) {
-      fetch(`/api/discovery/history?email=${encodeURIComponent(currentUser.email)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data && Array.isArray(data.history) && data.history.length > 0) {
-            setSessions(data.history);
-            localStorage.setItem(`discovery_history_${emailKey}`, JSON.stringify(data.history));
-          }
-        })
-        .catch(() => {});
-    }
-    startNewInquiry();
-  }, [currentUser?.email]);
-
-  useEffect(() => {
-    const emailKey = currentUser?.email ? currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'default';
-    try {
-      localStorage.setItem(`discovery_history_${emailKey}`, JSON.stringify(sessions));
-    } catch (e) {
-      console.error('Failed to save search history', e);
-    }
-  }, [sessions, currentUser?.email]);
+  }, [newInquiryTrigger]);
 
   const [attachedFile, setAttachedFile] = useState<{
     name: string;
@@ -183,13 +172,21 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
     };
   }, [isProcessing]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToTurn = (turnId: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(`chat-turn-${turnId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isProcessing, activeStep, pipelineStepIndex]);
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      scrollToTurn(lastMsg.id);
+    }
+  }, [messages.length]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, modality: 'image' | 'audio' | 'video') => {
     const file = e.target.files?.[0];
@@ -216,37 +213,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
   };
 
   const startNewInquiry = () => {
-    const newSessId = `sess-${Date.now()}`;
-    setActiveSessionId(newSessId);
-    setMessages([]);
-    setInputQuery('');
-    setAttachedFile(null);
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  };
-
-  const selectSession = (session: InquirySession) => {
-    setActiveSessionId(session.id);
-    if (session.messages && session.messages.length > 0) {
-      setMessages(session.messages);
+    if (onNewInquiry) {
+      onNewInquiry();
     } else {
       setMessages([]);
-      setInputQuery(session.title);
-      executeSearch(session.title, session.id);
+      setInputQuery('');
+      setAttachedFile(null);
     }
-  };
-
-  const deleteSession = (e: React.MouseEvent, sessionId: string) => {
-    e.stopPropagation();
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    if (currentUser?.email) {
-      fetch(`/api/discovery/history?email=${encodeURIComponent(currentUser.email)}&session_id=${encodeURIComponent(sessionId)}`, {
-        method: 'DELETE',
-      }).catch(() => {});
-    }
-    if (activeSessionId === sessionId) {
-      startNewInquiry();
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
   };
 
@@ -275,17 +250,19 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
     setIsProcessing(true);
 
     const sessId = targetSessId || activeSessionId;
-    setSessions((prev) => {
-      const existing = prev.find((s) => s.id === sessId);
+    if (onUpdateSessions) {
+      const existing = sessions.find((s) => s.id === sessId);
       if (existing) {
-        return prev.map((s) =>
-          s.id === sessId
-            ? {
-                ...s,
-                title: s.title === 'New Inquiry' ? effectiveQuery || currentAttachment?.name || 'Inquiry' : s.title,
-                messages: newMessages,
-              }
-            : s
+        onUpdateSessions(
+          sessions.map((s) =>
+            s.id === sessId
+              ? {
+                  ...s,
+                  title: s.title === 'New Inquiry' ? effectiveQuery || currentAttachment?.name || 'Inquiry' : s.title,
+                  messages: newMessages,
+                }
+              : s
+          )
         );
       } else {
         const newSession: InquirySession = {
@@ -294,9 +271,9 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
           timestamp: 'Just now',
           messages: newMessages,
         };
-        return [newSession, ...prev];
+        onUpdateSessions([newSession, ...sessions]);
       }
-    });
+    }
 
     const conversationHistory: { role: string; content: string }[] = [];
     const previousSources: any[] = [];
@@ -358,9 +335,11 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
       const finalMessages = [...newMessages, assistantTurn];
       setMessages(finalMessages);
 
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessId ? { ...s, messages: finalMessages } : s))
-      );
+      if (onUpdateSessions) {
+        onUpdateSessions(
+          sessions.map((s) => (s.id === sessId ? { ...s, messages: finalMessages } : s))
+        );
+      }
 
       if (currentUser?.email) {
         const itemToSave = {
@@ -463,12 +442,10 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
     );
   };
 
-  const filteredHistorySessions = sessions.filter((s) =>
-    s.title.toLowerCase().includes(historySearchQuery.toLowerCase())
-  );
+
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-slate-50 text-slate-900 overflow-hidden w-full">
+    <div className="flex flex-col h-full bg-slate-50 text-slate-900 overflow-hidden w-full">
       
       {/* Hidden file input */}
       <input
@@ -482,144 +459,6 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
         }}
       />
 
-      {/* Discovery Search History Left Sidebar */}
-      <aside
-        className={`${
-          isSidebarOpen ? 'w-64 md:w-72' : 'w-0'
-        } transition-all duration-300 ease-in-out bg-white border-r border-slate-200 flex flex-col h-full overflow-hidden flex-shrink-0 z-30 font-sans shadow-sm`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Compass className="w-5 h-5 text-indigo-600" />
-            <span className="text-base font-bold text-slate-900 tracking-tight">
-              Discovery
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-1 text-slate-500">
-            <button
-              onClick={() => setShowHistorySearch(!showHistorySearch)}
-              className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition"
-              title="Filter search history"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="flex items-center space-x-1 p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition"
-              title="Close Menu"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* History Search Filter Bar */}
-        {showHistorySearch && (
-          <div className="px-3 pt-2.5 pb-1">
-            <div className="relative">
-              <input
-                type="text"
-                value={historySearchQuery}
-                onChange={(e) => setHistorySearchQuery(e.target.value)}
-                placeholder="Filter search history..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600"
-              />
-              {historySearchQuery && (
-                <button
-                  onClick={() => setHistorySearchQuery('')}
-                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Top Action: New Inquiry */}
-        <div className="p-3">
-          <button
-            onClick={startNewInquiry}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition group shadow-sm"
-          >
-            <div className="flex items-center space-x-2.5">
-              <Plus className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
-              <span>New Inquiry</span>
-            </div>
-          </button>
-        </div>
-
-        {/* Search History Section */}
-        <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
-          <div className="px-3 pt-1 pb-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            Search History
-          </div>
-
-          {sessions.length === 0 ? (
-            <div className="px-3 py-6 text-center">
-              <p className="text-xs text-slate-500 font-medium">No search history yet</p>
-              <p className="text-[11px] text-slate-400 mt-1">Searches you make will appear here</p>
-            </div>
-          ) : filteredHistorySessions.length === 0 ? (
-            <div className="px-3 py-4 text-xs text-slate-500 text-center">
-              No matching searches found
-            </div>
-          ) : (
-            filteredHistorySessions.map((sess) => {
-              const isActive = activeSessionId === sess.id;
-              return (
-                <div
-                  key={sess.id}
-                  onClick={() => selectSession(sess)}
-                  className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition ${
-                    isActive
-                      ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm border border-indigo-200'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                  title={sess.title}
-                >
-                  <div className="flex items-center space-x-2.5 truncate flex-1 pr-1">
-                    <Search className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    <span className="truncate">{sess.title}</span>
-                  </div>
-                  <button
-                    onClick={(e) => deleteSession(e, sess.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-600 text-slate-400 rounded transition flex-shrink-0"
-                    title="Remove from history"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Bottom Bar: Clear History */}
-        {sessions.length > 0 && (
-          <div className="p-2 border-t border-slate-200">
-            <button
-              onClick={() => {
-                setSessions([]);
-                const emailKey = currentUser?.email ? currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'default';
-                localStorage.removeItem(`discovery_history_${emailKey}`);
-                if (currentUser?.email) {
-                  fetch(`/api/discovery/history?email=${encodeURIComponent(currentUser.email)}`, {
-                    method: 'DELETE',
-                  }).catch(() => {});
-                }
-                startNewInquiry();
-              }}
-              className="w-full py-1.5 px-2 text-[11px] text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition text-center"
-            >
-              Clear Search History
-            </button>
-          </div>
-        )}
-      </aside>
-
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden max-w-5xl mx-auto px-3 md:px-6 w-full relative">
         <MediaAutomationBackground className="opacity-35" nodeCount={45} interactive={true} showMediaLabels={false} />
@@ -627,10 +466,10 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
         {/* Top Header Bar */}
         <div className="flex items-center justify-between py-2.5 border-b border-slate-200 mb-2 flex-shrink-0">
           <div className="flex items-center space-x-2">
-            {!isSidebarOpen && (
+            {!isSidebarOpen && onToggleSidebar && (
               <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 hover:text-slate-900 transition shadow-sm mr-2"
+                onClick={() => onToggleSidebar(true)}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 hover:text-slate-900 transition shadow-sm mr-2 cursor-pointer"
                 title="Open Menu"
               >
                 <Menu className="w-4 h-4 text-indigo-600" />
@@ -646,14 +485,6 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
               </>
             )}
           </div>
-
-          <button
-            onClick={startNewInquiry}
-            className="px-3 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-xs font-semibold text-slate-700 hover:text-slate-900 transition flex items-center space-x-1.5 shadow-sm"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-indigo-600" />
-            <span>New Inquiry</span>
-          </button>
         </div>
 
         {/* Main Conversation Stream */}
@@ -681,10 +512,11 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                 return (
                   <motion.div 
                     key={msg.id} 
+                    id={`chat-turn-${msg.id}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className="flex justify-end items-start space-x-3"
+                    className="flex justify-end items-start space-x-3 scroll-mt-6"
                   >
                     <div className="max-w-2xl bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-sm px-5 py-3.5 text-slate-900 shadow-sm">
                       {msg.mediaBase64 && msg.modality === 'image' && (
@@ -724,10 +556,11 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
               return (
                 <motion.div 
                   key={msg.id} 
+                  id={`chat-turn-${msg.id}`}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, ease: 'easeOut' }}
-                  className="flex items-start space-x-3"
+                  className="flex items-start space-x-3 scroll-mt-6"
                 >
                   <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
                     <Bot className="w-4 h-4" />
@@ -902,6 +735,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                       </div>
                     )}
 
+                    {/* Interactive 3D Geocoded Globe */}
+                    {sources && sources.length > 0 && (
+                      <Interactive3DGlobe
+                        sources={sources}
+                        onSelectArticle={(art) => setActiveModalArticle(art)}
+                        title="3D Global & Regional Geo-Intelligence Globe"
+                      />
+                    )}
+
                     {/* Source Distribution with Tier Filter */}
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
@@ -957,7 +799,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({ currentUse
                             >
                               <div>
                                 <div className="flex items-center justify-between mb-2">
-                                  {getTierBadge(src.source_tier)}
+                                  <div className="flex items-center space-x-1.5 flex-wrap gap-1">
+                                    {getTierBadge(src.source_tier)}
+                                    {src.location?.formatted && (
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center space-x-1">
+                                        <MapPin className="w-2.5 h-2.5 text-indigo-600" />
+                                        <span>{src.location.formatted}</span>
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-[11px] text-slate-500 font-mono font-semibold">
                                     Trust: {Math.round((src.credibility_score || 0.8) * 100)}%
                                   </span>
