@@ -18,6 +18,7 @@ import { ReportingView } from './views/ReportingView';
 import { AdminUsersView } from './views/AdminUsersView';
 import { AuditLogView } from './views/AuditLogView';
 import { ExecutiveBriefsView } from './views/ExecutiveBriefsView';
+import { TrendingGlobeView } from './views/TrendingGlobeView';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<{
@@ -224,6 +225,15 @@ export const App: React.FC = () => {
         return <AuditLogView />;
       case 'briefs':
         return <ExecutiveBriefsView />;
+      case 'globe':
+        return (
+          <TrendingGlobeView
+            onBack={() => setCurrentView('discovery')}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={setIsSidebarOpen}
+            currentUser={currentUser}
+          />
+        );
       default:
         return (
           <DiscoveryChatView
@@ -270,6 +280,7 @@ export const App: React.FC = () => {
           onNewInquiry={handleNewInquiry}
           onOpenRules={() => setCurrentView('rules')}
           onOpenSettings={() => setCurrentView('settings')}
+          onOpenGlobe={() => setCurrentView('globe')}
         />
 
         <main className="flex-1 h-full overflow-y-auto bg-slate-50 flex flex-col relative custom-scrollbar">

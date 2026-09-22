@@ -11,7 +11,8 @@ export type ViewType =
   | 'reporting'
   | 'admin-users'
   | 'audit-log'
-  | 'briefs';
+  | 'briefs'
+  | 'globe';
 
 export type FactCheckVerdict = 'Verified' | 'Unverified' | 'Disputed' | 'Likely False';
 export type ValidationStatus = 'approved' | 'rejected' | 'needs_review';

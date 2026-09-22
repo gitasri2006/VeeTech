@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Compass, Search, PanelLeftClose, Plus, SlidersHorizontal,
-  ChevronRight, Trash2, Settings, X
+  ChevronRight, Trash2, Settings, X, Globe2
 } from 'lucide-react';
 import { ViewType, UserRole } from '../types';
 
@@ -43,6 +43,7 @@ interface DiscoverySidebarProps {
   onNewInquiry: () => void;
   onOpenRules: () => void;
   onOpenSettings: () => void;
+  onOpenGlobe?: () => void;
 }
 
 export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
@@ -57,6 +58,7 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
   onNewInquiry,
   onOpenRules,
   onOpenSettings,
+  onOpenGlobe,
 }) => {
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [showHistorySearch, setShowHistorySearch] = useState(false);
@@ -121,7 +123,7 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
         </div>
       )}
 
-      {/* Top Action: New Inquiry & Set Your Rules */}
+      {/* Top Action: New Inquiry, Live 3D Globe & Set Your Rules */}
       <div className="p-3 pb-2 space-y-2">
         <button
           onClick={onNewInquiry}
@@ -132,6 +134,26 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
             <span>New Inquiry</span>
           </div>
           <span className="text-[10px] bg-orange-700/60 text-white px-1.5 py-0.5 rounded font-medium">⌘N</span>
+        </button>
+
+        {/* Live 3D Globe */}
+        <button
+          onClick={onOpenGlobe}
+          className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition group shadow-xs cursor-pointer ${
+            currentView === 'globe'
+              ? 'bg-orange-100 text-orange-900 font-bold border border-orange-300 shadow-xs'
+              : 'bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-orange-200/80 hover:border-orange-300'
+          }`}
+          title="Open 360° Live Global Trending 3D Globe"
+        >
+          <div className="flex items-center space-x-2">
+            <Globe2 className="w-3.5 h-3.5 text-orange-600 group-hover:scale-110 transition-transform" />
+            <span>Trending Globe</span>
+          </div>
+          <span className="flex items-center space-x-1 text-[10px] text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse" />
+            <span>3D</span>
+          </span>
         </button>
 
         {/* Set Your Rules */}

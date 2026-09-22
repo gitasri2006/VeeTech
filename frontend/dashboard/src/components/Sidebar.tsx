@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Compass, Newspaper, FileText, Image, Building2,
   SlidersHorizontal, CheckCheck, MessageSquare, Sparkles,
-  BarChart3, Users, History, Settings
+  BarChart3, Users, History, Settings, Globe2
 } from 'lucide-react';
 import { ViewType } from '../types';
 
@@ -24,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       group: 'INTELLIGENCE & DISCOVERY',
       items: [
         { id: 'discovery' as ViewType, label: 'Search & Discovery', icon: Compass },
+        { id: 'globe' as ViewType, label: 'Live 3D Globe', icon: Globe2 },
         { id: 'feed' as ViewType, label: 'Unified Real-Time Feed', icon: Newspaper },
         { id: 'story-detail' as ViewType, label: 'Story & Evidence Panel', icon: FileText },
         { id: 'media-viewer' as ViewType, label: 'Multimodal Inspector', icon: Image },
