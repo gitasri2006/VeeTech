@@ -65,6 +65,7 @@ class Entity(BaseModel):
 
 class Rule(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: Optional[str] = "Custom Rule"
     entity_id: Optional[str] = None
     group_id: Optional[str] = None
     geo_filter: Dict[str, Any] = Field(default_factory=dict)

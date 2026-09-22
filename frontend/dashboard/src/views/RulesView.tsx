@@ -248,7 +248,14 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
       await api.createRule(newRule);
     } catch (e) {}
 
-    setRules((prev) => [newRule, ...prev]);
+    setRules((prev) => {
+      const updated = [newRule, ...prev.filter((r) => r.id !== newRule.id)];
+      try {
+        localStorage.setItem('discovery_user_rules', JSON.stringify(updated));
+      } catch (err) {}
+      return updated;
+    });
+    window.dispatchEvent(new CustomEvent('discovery_rules_updated'));
     setIsSavingRule(false);
     showToast(`✓ Rule "${newRule.name}" saved & activated across all discovery agents!`);
   };
@@ -259,7 +266,14 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
       try {
         await api.deleteRule(id);
       } catch (e) {}
-      setRules((prev) => prev.filter((r) => r.id !== id));
+      setRules((prev) => {
+        const updated = prev.filter((r) => r.id !== id);
+        try {
+          localStorage.setItem('discovery_user_rules', JSON.stringify(updated));
+        } catch (err) {}
+        return updated;
+      });
+      window.dispatchEvent(new CustomEvent('discovery_rules_updated'));
       showToast(`Rule "${name}" deleted.`);
     }
   };

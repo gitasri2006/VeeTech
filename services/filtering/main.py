@@ -60,6 +60,8 @@ class CompileNLRuleRequest(BaseModel):
 
 
 class CreateRuleRequest(BaseModel):
+    id: Optional[str] = None
+    name: Optional[str] = "Custom Rule"
     entity_id: Optional[str] = None
     group_id: Optional[str] = None
     geo_filter: Dict[str, Any] = Field(default_factory=dict)
@@ -234,7 +236,10 @@ async def compile_nl_rule_endpoint(request: CompileNLRuleRequest):
 @app.post("/rules", response_model=Rule, status_code=status.HTTP_201_CREATED, tags=["Rules"])
 async def create_rule_endpoint(request: CreateRuleRequest):
     """Save a structured Rule configuration."""
+    rule_id = request.id or f"rule-{uuid.uuid4()}"
     rule = Rule(
+        id=rule_id,
+        name=request.name or "Custom Rule",
         entity_id=request.entity_id,
         group_id=request.group_id,
         geo_filter=request.geo_filter,

@@ -708,14 +708,14 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
     tracer.log_step("DiscoveryFanOut", "LiveMultiSourceAdapters", {"queries": search_queries, "relevant_count": len(unique_candidates)}, f"Retrieved {len(unique_candidates)} relevant candidates", f"Strict topic filtering applied for: {target_terms}")
 
     # 4.2 Custom User-Defined Rule Filtering (Optional active rule)
-    if request.scope and (request.scope.rule_id or request.scope.min_tier or request.scope.allowed_domains or request.scope.blocked_domains or request.scope.must_not_include):
+    if request.scope and (request.scope.rule_id or request.scope.min_tier or request.scope.allowed_domains or request.scope.blocked_domains or request.scope.must_not_include or request.scope.must_include):
         filtered_by_rule = []
         for cand in unique_candidates:
             cand_domain = (cand.get("domain") or "").lower()
             cand_tier = cand.get("source_tier", 2)
             cand_text = f"{cand.get('title', '')} {cand.get('snippet', '')}".lower()
 
-            # Min Tier filter
+            # Min Tier filter (e.g. tier <= min_tier)
             if request.scope.min_tier and cand_tier > request.scope.min_tier:
                 continue
             # Allowed Domains filter
@@ -737,13 +737,12 @@ async def execute_unified_discovery(request: UnifiedSearchRequest) -> Dict[str, 
 
             filtered_by_rule.append(cand)
 
-        if filtered_by_rule:
-            unique_candidates = filtered_by_rule
-            tracer.log_step("RuleEngine", "DeterministicRuleFilter", {
-                "rule_id": request.scope.rule_id,
-                "rule_name": request.scope.rule_name,
-                "retained_candidates": len(unique_candidates)
-            }, f"Applied user rule '{request.scope.rule_name or request.scope.rule_id}': retained {len(unique_candidates)} candidates matching rule criteria", "Filtered strictly according to user rule")
+        unique_candidates = filtered_by_rule
+        tracer.log_step("RuleEngine", "DeterministicRuleFilter", {
+            "rule_id": request.scope.rule_id,
+            "rule_name": request.scope.rule_name,
+            "retained_candidates": len(unique_candidates)
+        }, f"Applied user rule '{request.scope.rule_name or request.scope.rule_id}': retained {len(unique_candidates)} candidates matching rule criteria", "Filtered strictly according to user rule")
 
     # 5. Deep Web Extraction via Playwright for Top News URLs with Short Snippets
     deep_scraped_count = 0

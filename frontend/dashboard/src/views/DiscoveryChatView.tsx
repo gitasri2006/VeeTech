@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Sparkles, Image as ImageIcon, Mic, Video, Globe2,
@@ -47,6 +47,8 @@ interface ChatTurn {
   mediaMimeType?: string;
   results?: any;
   error?: string;
+  appliedRuleName?: string;
+  appliedRuleTier?: number;
 }
 
 interface InquirySession {
@@ -185,15 +187,46 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    api.listRules()
-      .then((rList) => {
-        if (Array.isArray(rList)) {
-          setAvailableRules(rList);
+  const refreshAvailableRules = useCallback(async () => {
+    try {
+      let combinedRules: Rule[] = [];
+      // 1. Read from local storage
+      try {
+        const stored = localStorage.getItem('discovery_user_rules');
+        if (stored) {
+          const parsed: Rule[] = JSON.parse(stored);
+          if (Array.isArray(parsed)) combinedRules = [...parsed];
         }
-      })
-      .catch((err) => console.warn('Rule fetch notice:', err));
+      } catch (e) {}
+
+      // 2. Fetch from backend API
+      const rList = await api.listRules();
+      if (Array.isArray(rList)) {
+        rList.forEach((r) => {
+          const idx = combinedRules.findIndex((c) => c.id === r.id);
+          if (idx >= 0) {
+            combinedRules[idx] = { ...combinedRules[idx], ...r, name: r.name || combinedRules[idx].name };
+          } else {
+            combinedRules.push(r);
+          }
+        });
+      }
+
+      setAvailableRules(combinedRules);
+    } catch (e) {
+      console.warn('Rule fetch notice:', e);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshAvailableRules();
+    window.addEventListener('discovery_rules_updated', refreshAvailableRules);
+    window.addEventListener('storage', refreshAvailableRules);
+    return () => {
+      window.removeEventListener('discovery_rules_updated', refreshAvailableRules);
+      window.removeEventListener('storage', refreshAvailableRules);
+    };
+  }, [refreshAvailableRules]);
 
   useEffect(() => {
     let interval: any;
@@ -328,7 +361,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 
     const activeRule = availableRules.find((r) => r.id === selectedRuleId);
     const customScope = activeRule ? {
-      min_tier: activeRule.min_source_tier,
+      min_tier: activeRule.min_source_tier || activeRule.domain_rules?.min_tier || 2,
       allowed_domains: activeRule.domain_rules?.allowed_domains,
       blocked_domains: activeRule.domain_rules?.blocked_domains,
       recency_window: activeRule.recency_window,
@@ -361,14 +394,42 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
       const res = await api.searchUnifiedDiscovery(searchOptions);
 
       setActiveStep('Synthesizing executive brief & cross-source consensus...');
+
+      // Strictly filter returned sources by active rule criteria if rule is selected
+      if (activeRule && res && Array.isArray(res.sources)) {
+        const minT = activeRule.min_source_tier || activeRule.domain_rules?.min_tier || 2;
+        const allowedD = activeRule.domain_rules?.allowed_domains?.map((d: string) => d.trim().toLowerCase()).filter(Boolean);
+        const blockedD = activeRule.domain_rules?.blocked_domains?.map((d: string) => d.trim().toLowerCase()).filter(Boolean);
+        const mustNot = activeRule.boolean_terms?.must_not_include?.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+        const mustInc = activeRule.boolean_terms?.must_include?.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+
+        res.sources = res.sources.filter((s: any) => {
+          const tier = s.source_tier || 2;
+          if (tier > minT) return false;
+          const dom = (s.domain || s.source || '').toLowerCase();
+          const txt = `${s.title || ''} ${s.snippet || ''}`.toLowerCase();
+          if (allowedD && allowedD.length > 0 && !allowedD.some((d: string) => dom.includes(d))) return false;
+          if (blockedD && blockedD.length > 0 && blockedD.some((d: string) => dom.includes(d))) return false;
+          if (mustNot && mustNot.length > 0 && mustNot.some((t: string) => txt.includes(t))) return false;
+          if (mustInc && mustInc.length > 0 && !mustInc.some((t: string) => txt.includes(t))) return false;
+          return true;
+        });
+      }
       
+      const turnId = `asst-${Date.now()}`;
       const assistantTurn: ChatTurn = {
-        id: `asst-${Date.now()}`,
+        id: turnId,
         role: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modality: currentModality,
         results: res,
+        appliedRuleName: activeRule?.name,
+        appliedRuleTier: activeRule?.min_source_tier,
       };
+
+      if (activeRule?.min_source_tier && activeRule.min_source_tier <= 2) {
+        setSelectedTierFilter((prev) => ({ ...prev, [turnId]: activeRule.min_source_tier as 1 | 2 }));
+      }
 
       const finalMessages = [...newMessages, assistantTurn];
       setMessages(finalMessages);
@@ -608,7 +669,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                     {/* Brief Header */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-3">
                       <div>
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="text-xs font-bold uppercase tracking-wider text-orange-600 flex items-center space-x-1">
                             <Sparkles className="w-3.5 h-3.5 mr-1" />
                             <span>Intelligence Brief</span>
@@ -617,6 +678,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                           <span className="text-xs text-slate-500 font-medium">{result?.language_name || 'English'}</span>
                           <span className="text-slate-300">•</span>
                           <span className="text-xs text-slate-500 font-medium">{sources.length} Sources Processed</span>
+                          {msg.appliedRuleName && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300 flex items-center space-x-1 shadow-2xs">
+                                <span>⚡ Rule: {msg.appliedRuleName}</span>
+                                {msg.appliedRuleTier && <span className="text-orange-600 font-normal"> (Tier {msg.appliedRuleTier} Max)</span>}
+                              </span>
+                            </>
+                          )}
                         </div>
                         <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
                           {intel?.title || result?.query || 'Live Intelligence Synthesis'}
@@ -1175,21 +1245,24 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 
                 {/* Custom User Rule Selector (Optional) */}
                 <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                   <select
                     value={selectedRuleId}
                     onChange={(e) => setSelectedRuleId(e.target.value)}
-                    className={`border text-xs font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-orange-600 max-w-[160px] truncate ${
-                      selectedRuleId ? 'bg-orange-50 border-orange-300 text-orange-800 font-semibold' : 'bg-slate-100 border-slate-200 text-slate-700'
+                    className={`border text-xs font-medium rounded-lg px-2.5 py-1 focus:outline-none focus:border-orange-600 max-w-[210px] truncate cursor-pointer transition shadow-2xs ${
+                      selectedRuleId ? 'bg-orange-50 border-orange-400 text-orange-900 font-bold' : 'bg-slate-100 border-slate-200 text-slate-700'
                     }`}
                     title="Optional: Select a created rule to filter search results strictly according to rule criteria"
                   >
                     <option value="">🌐 Global (No Rule)</option>
-                    {availableRules.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        ⚡ {r.name || r.id}
-                      </option>
-                    ))}
+                    {availableRules.map((r) => {
+                      const displayName = r.name || (r.min_source_tier ? `Tier ${r.min_source_tier} Rule` : `Rule ${r.id.slice(0, 8)}`);
+                      return (
+                        <option key={r.id} value={r.id}>
+                          ⚡ {displayName}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
