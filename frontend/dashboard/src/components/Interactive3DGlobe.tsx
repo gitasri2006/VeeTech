@@ -521,27 +521,27 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
         const pt = project(src.location.lat, src.location.lng);
 
         if (pt.z > 0.02) {
-          const tier = src.source_tier || 2;
-          const pinColor = tier === 1 ? '#10b981' : tier === 2 ? '#6366f1' : '#f59e0b';
-          const pinGlow = tier === 1 ? 'rgba(16, 185, 129,' : tier === 2 ? 'rgba(99, 102, 241,' : 'rgba(245, 158, 11,';
+          const tier = Number(src.source_tier) || 2;
+          const pinColor = tier === 1 ? '#10b981' : tier === 2 ? '#f97316' : '#f59e0b';
+          const pinGlow = tier === 1 ? 'rgba(16, 185, 129,' : tier === 2 ? 'rgba(249, 115, 22,' : 'rgba(245, 158, 11,';
 
-          const zScale = 0.8 + 0.45 * pt.z;
-          const pinRadius = 6 * zScale;
-          const pulseR = pinRadius + Math.sin(pulseAngle + sIdx) * 5 * zScale + 3;
+          const zScale = 0.85 + 0.45 * pt.z;
+          const pinRadius = 6.5 * zScale;
+          const pulseR = pinRadius + Math.sin(pulseAngle + sIdx) * 5 * zScale + 3.5;
 
           currentProjectedPins.push({
             source: src,
             x: pt.x,
             y: pt.y,
             z: pt.z,
-            radius: pinRadius + 7,
+            radius: pinRadius + 8,
           });
 
           // Outer Pulsing Radar Beacon
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, Math.max(3, pulseR), 0, Math.PI * 2);
-          ctx.strokeStyle = `${pinGlow} 0.65)`;
-          ctx.lineWidth = 1.8;
+          ctx.strokeStyle = `${pinGlow} 0.75)`;
+          ctx.lineWidth = 2.0;
           ctx.stroke();
 
           // Inner Solid Pin Core
@@ -549,7 +549,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
           ctx.arc(pt.x, pt.y, pinRadius, 0, Math.PI * 2);
           ctx.fillStyle = pinColor;
           ctx.shadowColor = pinColor;
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 12;
           ctx.fill();
           ctx.shadowBlur = 0;
 
@@ -559,15 +559,15 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
           ctx.fillStyle = '#ffffff';
           ctx.fill();
 
-          // Prominently Display Published Media Icon / Emblem Badge when facing front (z > 0.25)
-          if (pt.z > 0.25) {
-            const mediaEmblem = (src as any)._mediaEmblem || '📰 Wire';
-            const bgBadge = (src as any)._bgBadge || '#1e293b';
+          // Prominently Display Published Media Icon / Emblem Badge when facing visible hemisphere
+          if (pt.z > 0.08) {
+            const mediaEmblem = (src as any)._mediaEmblem || (tier === 2 ? '📰 Press' : '⚡ Wire');
+            const bgBadge = (src as any)._bgBadge || (tier === 2 ? '#9a3412' : '#064e3b');
             const badgeColor = (src as any)._badgeColor || '#ffffff';
             const city = src.location?.city ? ` • ${src.location.city}` : '';
             const badgeText = `${mediaEmblem}${city}`;
 
-            ctx.font = 'bold 9.5px system-ui, -apple-system, sans-serif';
+            ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
             const textWidth = ctx.measureText(badgeText).width;
             const badgeX = pt.x + pinRadius + 5;
             const badgeY = pt.y - 8;

@@ -26,6 +26,7 @@ interface TrendingGlobeViewProps {
 
 // True curated real-time global trending articles with verified geographic coordinates
 const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
+  // Tier 1 Sources (Official Wires / Govt / Space)
   {
     id: 'tr-001',
     title: 'ISRO advances Gaganyaan human spaceflight mission test vehicle preparations',
@@ -49,28 +50,28 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
   },
   {
     id: 'tr-002',
-    title: 'Global Chipmakers commit multi-billion dollar semiconductor fab expansions in Tamil Nadu and Gujarat',
-    snippet: 'International semiconductor consortiums ink bilateral pacts for silicon carbide and power electronics manufacturing plants.',
-    source: 'The Hindu',
-    domain: 'thehindu.com',
-    url: 'https://www.thehindu.com/business/semiconductor-fab-investments-india',
+    title: 'PIB New Delhi: Cabinet approves National Quantum Mission research corridors',
+    snippet: 'Government of India announces dedicated funding for quantum computing, secure satellite communications, and photonics research.',
+    source: 'PIB India',
+    domain: 'pib.gov.in',
+    url: 'https://pib.gov.in/PressReleasePage.aspx?PRID=quantum-mission',
     source_tier: 1,
-    credibility_score: 0.96,
-    category: 'Technology & Economy',
+    credibility_score: 0.99,
+    category: 'Science & Aerospace',
     location: {
-      city: 'Chennai',
-      state: 'Tamil Nadu',
+      city: 'New Delhi',
+      state: 'Delhi',
       country: 'India',
       country_code: 'IN',
-      lat: 13.0827,
-      lng: 80.2707,
-      formatted: 'Chennai, Tamil Nadu, India',
-      origin_type: 'dateline_bureau'
+      lat: 28.6139,
+      lng: 77.2090,
+      formatted: 'New Delhi, Delhi, India',
+      origin_type: 'national_capital'
     }
   },
   {
     id: 'tr-003',
-    title: 'Reuters: AI Regulatory Accord agreed across European Union and US transatlantic summits',
+    title: 'Reuters: Transatlantic AI Regulatory Accord agreed across EU and US summits',
     snippet: 'Framework establishes strict safety audits, synthetic watermark disclosure protocols, and dual-model validation requirements.',
     source: 'Reuters',
     domain: 'reuters.com',
@@ -91,7 +92,7 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
   },
   {
     id: 'tr-004',
-    title: 'Wall Street & Federal Reserve monitor digital asset settlement rails and inflation metrics',
+    title: 'Bloomberg: US Federal Reserve and Wall Street monitor instant settlement rails',
     snippet: 'US Central Bank officials issue policy guidance on interbank instant clearing mechanisms and real-time liquidity reporting.',
     source: 'Bloomberg',
     domain: 'bloomberg.com',
@@ -110,6 +111,50 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
       origin_type: 'institutional_headquarters'
     }
   },
+  {
+    id: 'tr-007',
+    title: 'Reuters: Tokyo Metropolitan Clean Energy Grid integrates oceanic tidal arrays',
+    snippet: 'Japanese energy ministry connects offshore wave kinetic turbines into Kanto regional grid, cutting fossil dependency.',
+    source: 'Reuters',
+    domain: 'reuters.com',
+    url: 'https://www.reuters.com/business/energy/japan-tidal-energy-grid',
+    source_tier: 1,
+    credibility_score: 0.96,
+    category: 'Energy & Climate',
+    location: {
+      city: 'Tokyo',
+      state: 'Kanto',
+      country: 'Japan',
+      country_code: 'JP',
+      lat: 35.6762,
+      lng: 139.6503,
+      formatted: 'Tokyo, Japan',
+      origin_type: 'national_capital'
+    }
+  },
+  {
+    id: 'tr-010',
+    title: 'AP News: Southeast Asia trade corridors implement unified digital customs clearance',
+    snippet: 'ASEAN digital trade summit ratifies paperless blockchain-verified logistics certificates for regional container shipping.',
+    source: 'AP News',
+    domain: 'apnews.com',
+    url: 'https://apnews.com/article/asean-trade-singapore-digital-customs',
+    source_tier: 1,
+    credibility_score: 0.96,
+    category: 'Trade & Logistics',
+    location: {
+      city: 'Singapore',
+      state: 'Singapore',
+      country: 'Singapore',
+      country_code: 'SG',
+      lat: 1.3521,
+      lng: 103.8198,
+      formatted: 'Singapore, Singapore',
+      origin_type: 'global_port_hub'
+    }
+  },
+
+  // Tier 2 Sources (Mainstream Press & Major Commercial Journalism)
   {
     id: 'tr-005',
     title: 'Tata Motors scales EV battery supply chain & reveals next-gen architecture',
@@ -133,7 +178,7 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
   },
   {
     id: 'tr-006',
-    title: 'Silicon Valley Autonomous AI Labs deploy multimodal reasoning foundation architectures',
+    title: 'Silicon Valley AI Labs deploy multimodal reasoning foundation models',
     snippet: 'Research labs in San Francisco publish open-weights benchmarks surpassing previous video keyframe comprehension records.',
     source: 'TechCrunch',
     domain: 'techcrunch.com',
@@ -153,24 +198,66 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
     }
   },
   {
-    id: 'tr-007',
-    title: 'Tokyo Metropolitan Clean Energy Grid integrates oceanic tidal power arrays',
-    snippet: 'Japanese energy ministry connects offshore wave kinetic turbines into Kanto regional grid, cutting fossil dependency.',
-    source: 'Reuters',
-    domain: 'reuters.com',
-    url: 'https://www.reuters.com/business/energy/japan-tidal-energy-grid',
-    source_tier: 1,
-    credibility_score: 0.96,
-    category: 'Energy & Climate',
+    id: 'tr-011',
+    title: 'Indian Space Startups in Hyderabad secure orbital launch payloads from European clients',
+    snippet: 'Private aerospace enterprises in Hyderabad and Chennai ramp up production of small satellite launch vehicles for international commercial constellations.',
+    source: 'NDTV',
+    domain: 'ndtv.com',
+    url: 'https://www.ndtv.com/india-news/indian-space-startups-launch-contracts',
+    source_tier: 2,
+    credibility_score: 0.94,
+    category: 'Science & Aerospace',
     location: {
-      city: 'Tokyo',
-      state: 'Kanto',
-      country: 'Japan',
-      country_code: 'JP',
-      lat: 35.6762,
-      lng: 139.6503,
-      formatted: 'Tokyo, Japan',
-      origin_type: 'national_capital'
+      city: 'Hyderabad',
+      state: 'Telangana',
+      country: 'India',
+      country_code: 'IN',
+      lat: 17.3850,
+      lng: 78.4867,
+      formatted: 'Hyderabad, Telangana, India',
+      origin_type: 'aerospace_cluster'
+    }
+  },
+  {
+    id: 'tr-013',
+    title: 'Wired: Next-Generation Solid-State Battery Tech Enters Commercial Road Tests',
+    snippet: 'Automotive engineers in California demonstrate 800-mile range electric vehicle prototypes utilizing ceramic electrolyte batteries.',
+    source: 'Wired.com',
+    domain: 'wired.com',
+    url: 'https://www.wired.com/story/solid-state-battery-breakthrough',
+    source_tier: 2,
+    credibility_score: 0.94,
+    category: 'Technology & CleanTech',
+    location: {
+      city: 'San Francisco',
+      state: 'California',
+      country: 'United States',
+      country_code: 'US',
+      lat: 37.7749,
+      lng: -122.4194,
+      formatted: 'San Francisco, CA, United States',
+      origin_type: 'tech_hub'
+    }
+  },
+  {
+    id: 'tr-014',
+    title: 'The Hindu: Semiconductor Fab Groundbreaking in Tamil Nadu & Gujarat Electronics Hubs',
+    snippet: 'Chief Ministers inaugurate silicon carbide fab campuses partnering with global wafer manufacturers.',
+    source: 'The Hindu',
+    domain: 'thehindu.com',
+    url: 'https://www.thehindu.com/business/semiconductor-fab-investments-india',
+    source_tier: 2,
+    credibility_score: 0.95,
+    category: 'Technology & Economy',
+    location: {
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      country: 'India',
+      country_code: 'IN',
+      lat: 13.0827,
+      lng: 80.2707,
+      formatted: 'Chennai, Tamil Nadu, India',
+      origin_type: 'dateline_bureau'
     }
   },
   {
@@ -196,14 +283,14 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
   },
   {
     id: 'tr-009',
-    title: 'France & Germany advance joint quantum computing and cryptographic defense network',
-    snippet: 'European defense ministers sign collaborative agreement for quantum key distribution (QKD) terrestrial links between Paris and Berlin.',
+    title: 'BBC: European Quantum Cryptography Network Connects Research Centers Across Paris & Berlin',
+    snippet: 'Researchers establish quantum key distribution terrestrial links between academic institutes.',
     source: 'BBC News',
     domain: 'bbc.co.uk',
     url: 'https://www.bbc.com/news/world-europe-quantum-defense',
-    source_tier: 1,
-    credibility_score: 0.97,
-    category: 'Defense & Science',
+    source_tier: 2,
+    credibility_score: 0.95,
+    category: 'Science & Aerospace',
     location: {
       city: 'Paris',
       state: 'Île-de-France',
@@ -216,66 +303,24 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
     }
   },
   {
-    id: 'tr-010',
-    title: 'Southeast Asia Trade Corridors implement unified digital customs clearance protocols in Singapore',
-    snippet: 'ASEAN digital trade summit ratifies paperless blockchain-verified logistics certificates for regional container shipping.',
-    source: 'AP News',
-    domain: 'apnews.com',
-    url: 'https://apnews.com/article/asean-trade-singapore-digital-customs',
-    source_tier: 1,
-    credibility_score: 0.96,
-    category: 'Trade & Logistics',
-    location: {
-      city: 'Singapore',
-      state: 'Singapore',
-      country: 'Singapore',
-      country_code: 'SG',
-      lat: 1.3521,
-      lng: 103.8198,
-      formatted: 'Singapore, Singapore',
-      origin_type: 'global_port_hub'
-    }
-  },
-  {
-    id: 'tr-011',
-    title: 'Indian Space Industry Startups secure orbital launch payloads from European clients',
-    snippet: 'Private aerospace enterprises in Hyderabad and Chennai ramp up production of small satellite launch vehicles for international commercial constellations.',
-    source: 'NDTV',
-    domain: 'ndtv.com',
-    url: 'https://www.ndtv.com/india-news/indian-space-startups-launch-contracts',
+    id: 'tr-015',
+    title: 'Indian Express: Delhi NCR Smart Mobility & Autonomous Metro Fleet Expansion',
+    snippet: 'Urban transport ministry deploys indigenous driverless signalling systems across regional rapid transit lines.',
+    source: 'Indian Express',
+    domain: 'indianexpress.com',
+    url: 'https://indianexpress.com/article/cities/delhi/metro-smart-mobility-expansion',
     source_tier: 2,
-    credibility_score: 0.94,
-    category: 'Science & Aerospace',
+    credibility_score: 0.93,
+    category: 'Technology & Economy',
     location: {
-      city: 'Hyderabad',
-      state: 'Telangana',
+      city: 'New Delhi',
+      state: 'Delhi',
       country: 'India',
       country_code: 'IN',
-      lat: 17.3850,
-      lng: 78.4867,
-      formatted: 'Hyderabad, Telangana, India',
-      origin_type: 'aerospace_cluster'
-    }
-  },
-  {
-    id: 'tr-012',
-    title: 'World Health Organization Geneva summit announces automated epidemic surveillance alert network',
-    snippet: 'Global health monitors link genomic sequencing telemetry into autonomous early-warning risk models.',
-    source: 'Reuters',
-    domain: 'reuters.com',
-    url: 'https://www.reuters.com/business/healthcare-pharmaceuticals/who-surveillance-grid',
-    source_tier: 1,
-    credibility_score: 0.98,
-    category: 'Global Health',
-    location: {
-      city: 'Geneva',
-      state: 'Geneva',
-      country: 'Switzerland',
-      country_code: 'CH',
-      lat: 46.2044,
-      lng: 6.1432,
-      formatted: 'Geneva, Switzerland',
-      origin_type: 'un_agency_headquarters'
+      lat: 28.6139,
+      lng: 77.2090,
+      formatted: 'New Delhi, Delhi, India',
+      origin_type: 'national_capital'
     }
   }
 ];
@@ -300,6 +345,19 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
   const zoomInRef = useRef<(() => void) | null>(null);
   const zoomOutRef = useRef<(() => void) | null>(null);
 
+  // Helper to accurately classify source tier
+  const resolveSourceTier = (src: any): number => {
+    if (src.source_tier) {
+      const num = Number(src.source_tier);
+      if (!isNaN(num) && (num === 1 || num === 2 || num === 3)) return num;
+    }
+    const clean = `${src.source || ''} ${src.domain || ''}`.toLowerCase();
+    if (clean.includes('reuters') || clean.includes('bloomberg') || clean.includes('apnews') || clean.includes('pib') || clean.includes('isro') || clean.includes('who.int')) {
+      return 1;
+    }
+    return 2; // Mainstream press / commercial journalism is Tier 2
+  };
+
   // Fetch live global trending stories from backend discovery APIs and RSS feeds
   const fetchTrendingFeed = useCallback(async () => {
     setIsRefreshing(true);
@@ -318,7 +376,7 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
           source: s.source || 'News Wire',
           domain: s.domain || 'reuters.com',
           url: s.url || 'https://www.reuters.com',
-          source_tier: s.source_tier || 1,
+          source_tier: resolveSourceTier(s),
           credibility_score: s.credibility_score || 0.95,
           category: s.category || 'Global News',
           location: s.location || DEFAULT_GLOBAL_TRENDING_SOURCES[idx % DEFAULT_GLOBAL_TRENDING_SOURCES.length].location,
@@ -351,12 +409,27 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
     return () => clearInterval(interval);
   }, [fetchTrendingFeed]);
 
-  // Filter sources based on selected tier and category
-  const filteredSources = sources.filter((s) => {
-    if (selectedTier !== 'all' && s.source_tier !== selectedTier) return false;
-    if (selectedCategory !== 'all' && (s as any).category && !(s as any).category.toLowerCase().includes(selectedCategory.toLowerCase())) return false;
-    return true;
-  });
+  // Filter sources strictly based on selected tier and category
+  const filteredSources = useMemo(() => {
+    return sources.filter((s) => {
+      const tier = Number(s.source_tier) || 2;
+      if (selectedTier !== 'all' && tier !== Number(selectedTier)) return false;
+      if (selectedCategory !== 'all') {
+        const cat = ((s as any).category || '').toLowerCase();
+        if (cat && !cat.includes(selectedCategory.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [sources, selectedTier, selectedCategory]);
+
+  // Handle tier filter selection with automatic view centering
+  const handleSelectTier = (tier: number | 'all') => {
+    setSelectedTier(tier);
+    const matches = sources.filter((s) => tier === 'all' || (Number(s.source_tier) || 2) === Number(tier));
+    if (matches.length > 0 && matches[0].location && flyToRef.current) {
+      flyToRef.current(matches[0].location.lat, matches[0].location.lng);
+    }
+  };
 
   // Extract distinct publishers for quick fly-to navigation pills
   const distinctPublishers = useMemo(() => {
@@ -493,7 +566,7 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
                 <span>Tier:</span>
               </span>
               <button
-                onClick={() => setSelectedTier('all')}
+                onClick={() => handleSelectTier('all')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                   selectedTier === 'all'
                     ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm'
@@ -503,7 +576,7 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
                 All Tiers
               </button>
               <button
-                onClick={() => setSelectedTier(1)}
+                onClick={() => handleSelectTier(1)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 ${
                   selectedTier === 1
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm'
@@ -514,7 +587,7 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
                 <span>Tier 1 Institutional</span>
               </button>
               <button
-                onClick={() => setSelectedTier(2)}
+                onClick={() => handleSelectTier(2)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 ${
                   selectedTier === 2
                     ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm'
