@@ -475,7 +475,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
       }
 
       // 5. Realistic Atmospheric Clouds / Weather Belts Layer
-      cloudShift = (cloudShift + 0.15) % 360;
+      cloudShift = (cloudShift + 0.05) % 360;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
       const cloudLatitudes = [-45, -15, 10, 45];
       for (const cLat of cloudLatitudes) {
@@ -600,9 +600,9 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
 
       projectedPinsRef.current = currentProjectedPins;
 
-      // 8. 360° Auto-rotation
+      // 8. 360° Auto-rotation (Slow, majestic, smooth cinematic planetary rotation)
       if (isAutoRotate && !isDraggingRef.current) {
-        setRotationY((prev) => (prev + 0.35) % 360);
+        setRotationY((prev) => (prev + 0.08) % 360);
       }
 
       // Inertia after release
