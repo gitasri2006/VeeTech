@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Compass, Mail, Lock, ArrowRight, AlertCircle, 
-  Globe2, ShieldCheck, Zap, Layers, Sparkles, Database,
-  Cpu, FileSearch, CheckCircle2, Eye, EyeOff
+  Eye, EyeOff
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { MediaAutomationBackground } from '../components/MediaAutomationBackground';
@@ -79,115 +78,40 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-center items-center px-4 py-8 lg:py-12 relative overflow-hidden font-sans select-none">
       
       {/* Framer motion Orange background canvas */}
-      <MediaAutomationBackground nodeCount={55} interactive={true} showMediaLabels={true} />
+      <MediaAutomationBackground nodeCount={60} interactive={true} showMediaLabels={true} />
 
-      {/* Main Grid Container */}
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+      {/* Centered Login Box Container */}
+      <div className="w-full max-w-md mx-auto relative z-10 flex flex-col items-center">
         
-        {/* Left Section: Full Orange High-Impact Showcase Card */}
+        {/* Top Status Pill */}
         <motion.div 
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="lg:col-span-7 flex flex-col justify-center space-y-4 lg:pr-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="mb-6 flex items-center space-x-2"
         >
-          {/* Status Pill */}
-          <div className="flex items-center space-x-2.5">
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-100 border border-orange-300 text-orange-800 text-xs font-bold shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse" />
-              <span>Discovery Multi-Agent Platform</span>
-            </div>
-            <span className="text-xs text-orange-800 font-semibold flex items-center space-x-1">
-              <Zap className="w-3.5 h-3.5 text-orange-600" />
-              <span>Real-Time Autonomous Investigation</span>
-            </span>
-          </div>
-
-          {/* Full Orange Title Card as Hero Visual */}
-          <div className="rounded-3xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-600 text-white p-7 sm:p-9 shadow-2xl shadow-orange-600/30 border border-orange-400/50 relative overflow-hidden">
-            {/* Top decorative lighting */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center space-x-3.5 mb-4 relative z-10">
-              <div className="w-13 h-13 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-md text-white flex items-center justify-center shadow-lg">
-                <Compass className="w-7 h-7" />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-xs">
-                  Discovery AI Intelligence
-                </h2>
-                <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">
-                  Autonomous Multi-Source Investigation & Fact Verification
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm sm:text-base text-orange-50 leading-relaxed font-medium mb-6 relative z-10">
-              An enterprise-grade autonomous intelligence platform that continuously ingests global live feeds, parses multimodal media (OCR, Speech, Video), geocodes sources to true geographic coordinates, and synthesizes zero-hallucination dossiers with Dual-LLM consensus verification.
-            </p>
-
-            {/* Core Capabilities Pillars in White Translucent Glass */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
-              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
-                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
-                  <Globe2 className="w-4 h-4 text-white" />
-                  <span>3D Geo-Intelligence Globe</span>
-                </div>
-                <p className="text-[11px] text-orange-100 leading-normal font-medium">
-                  Interactive 360° Earth with verified news publishers (Reuters, BBC, The Hindu) and true physical coordinates.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
-                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
-                  <ShieldCheck className="w-4 h-4 text-white" />
-                  <span>3-Tier Verification Consensus</span>
-                </div>
-                <p className="text-[11px] text-orange-100 leading-normal font-medium">
-                  Structured breakdown across Tier 1 Institutional Wires, Tier 2 Mainstream Press, and Tier 3 Local Media.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
-                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
-                  <Cpu className="w-4 h-4 text-white" />
-                  <span>Multimodal Sensory Analysis</span>
-                </div>
-                <p className="text-[11px] text-orange-100 leading-normal font-medium">
-                  Direct transcription of audio files, video keyframe analysis, and Gemini Vision OCR on documents.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
-                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
-                  <FileSearch className="w-4 h-4 text-white" />
-                  <span>DOCX Dossier Export</span>
-                </div>
-                <p className="text-[11px] text-orange-100 leading-normal font-medium">
-                  One-click export of complete executive briefs, consensus tables, and source links into formal Word documents.
-                </p>
-              </div>
-            </div>
+          <div className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-bold shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse" />
+            <span>Discovery Multi-Agent Platform</span>
           </div>
         </motion.div>
 
-        {/* Right Section: Clean Pure White & Orange Login Card */}
+        {/* Clean Pure White & Orange Centered Login Card */}
         <motion.div 
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
-          className="lg:col-span-5 w-full"
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+          className="w-full"
         >
-          <div className="w-full bg-white border border-orange-200 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-orange-950/10 relative">
+          <div className="w-full bg-white border border-orange-200 rounded-3xl p-7 sm:p-9 shadow-2xl shadow-orange-950/10 relative">
             
             {/* Brand Header */}
             <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-orange-100 border border-orange-200 mx-auto mb-3 flex items-center justify-center shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-orange-100 border border-orange-200 mx-auto mb-3.5 flex items-center justify-center shadow-sm">
                 <Compass className="w-7 h-7 text-orange-600" />
               </div>
               <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Sign In to Discovery</h2>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">Enter your account credentials to access intelligence</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Enter your account credentials to access intelligence</p>
             </div>
 
             {/* Error Alert */}
@@ -259,7 +183,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-600/25 transition flex items-center justify-center space-x-2 cursor-pointer mt-2 disabled:opacity-75"
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-600/25 transition flex items-center justify-center space-x-2 cursor-pointer mt-2 disabled:opacity-75"
               >
                 {isLoading ? (
                   <span>Authenticating...</span>
@@ -272,7 +196,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </button>
             </form>
 
-            <div className="mt-6 text-center text-[11px] text-slate-400">
+            <div className="mt-6 text-center text-[11px] text-slate-400 font-medium">
               VeeTech Multi-Agent Autonomous Intelligence System • Zero Hallucination
             </div>
           </div>
