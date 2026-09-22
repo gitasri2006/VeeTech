@@ -70,8 +70,10 @@ function sanitizeText(str: any): string {
   if (str === null || str === undefined) return '';
   return String(str)
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // remove control chars
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '') // strip surrogate pair emojis that break some Word XML parsers
     .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n');
+    .replace(/\r/g, '\n')
+    .trim();
 }
 
 export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: string): Promise<void> {
@@ -101,7 +103,7 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
           text: "DISCOVERY AI INTELLIGENCE DOSSIER",
           bold: true,
           size: 32,
-          color: "C2410C", // Vibrant Dark Orange
+          color: "C2410C",
         }),
       ],
       spacing: { after: 120 },
@@ -119,7 +121,7 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
     })
   );
 
-  // 2. Metadata Box (Multi-paragraph to ensure 100% Word XML validity without \n in runs)
+  // 2. Metadata Box
   paragraphs.push(
     new Paragraph({
       children: [
@@ -189,8 +191,11 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
     for (const finding of intel.key_findings) {
       paragraphs.push(
         new Paragraph({
-          bullet: { level: 0 },
-          children: [new TextRun({ text: sanitizeText(finding), size: 22 })],
+          indent: { left: 360 },
+          children: [
+            new TextRun({ text: "•  ", bold: true, color: "EA580C" }),
+            new TextRun({ text: sanitizeText(finding), size: 22 })
+          ],
           spacing: { after: 60 },
         })
       );
@@ -237,8 +242,11 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
         if (!sup) continue;
         paragraphs.push(
           new Paragraph({
-            bullet: { level: 0 },
-            children: [new TextRun({ text: sanitizeText(sup), size: 21 })],
+            indent: { left: 360 },
+            children: [
+              new TextRun({ text: "•  ", bold: true, color: "059669" }),
+              new TextRun({ text: sanitizeText(sup), size: 21 })
+            ],
             spacing: { after: 50 },
           })
         );
@@ -256,8 +264,11 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
         if (!con) continue;
         paragraphs.push(
           new Paragraph({
-            bullet: { level: 0 },
-            children: [new TextRun({ text: sanitizeText(con), size: 21 })],
+            indent: { left: 360 },
+            children: [
+              new TextRun({ text: "•  ", bold: true, color: "D97706" }),
+              new TextRun({ text: sanitizeText(con), size: 21 })
+            ],
             spacing: { after: 50 },
           })
         );
@@ -388,7 +399,7 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
             new TextRun({ text: publisher }),
             new TextRun({ text: "   |   " }),
             new TextRun({ text: "• Geographic Location: ", bold: true }),
-            new TextRun({ text: `📍 ${locationStr}` }),
+            new TextRun({ text: locationStr }),
           ],
           spacing: { after: 20 },
         }),
@@ -446,21 +457,58 @@ export async function exportDossierToDocx(data: ExportDossierData, rawQuery?: st
     })
   );
 
-  // Build Document with valid creator metadata
+  // Build Document with valid creator metadata and standard styles
   const doc = new Document({
     creator: "VeeTech Discovery AI",
     description: "Autonomous Multi-Source Investigation Dossier",
     title: title,
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Calibri",
+            size: 22,
+            color: "1F2937",
+          },
+        },
+      },
+    },
     sections: [
       {
-        properties: {},
+        properties: {
+          page: {
+            margin: {
+              top: 1440, // 1 inch
+              right: 1440,
+              bottom: 1440,
+              left: 1440,
+            },
+          },
+        },
         children: paragraphs,
       },
     ],
   });
 
   // Pack as Blob with exact standard docx MIME type
-  const blob = await Packer.toBlob(doc);
-  const cleanFileName = `Discovery_Intelligence_Brief_${title.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 35)}_${Date.now()}.docx`;
-  saveAs(blob, cleanFileName);
+  const rawBlob = await Packer.toBlob(doc);
+  const docxBlob = new Blob([rawBlob], {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
+
+  const safeTitle = (title || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 35);
+  const cleanFileName = `Discovery_Intelligence_Brief_${safeTitle}_${Date.now()}.docx`;
+
+  try {
+    const url = window.URL.createObjectURL(docxBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = cleanFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+  } catch (e) {
+    saveAs(docxBlob, cleanFileName);
+  }
 }
