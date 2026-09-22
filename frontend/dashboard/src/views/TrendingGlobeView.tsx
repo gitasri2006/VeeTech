@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Globe2, Compass, Layers, ExternalLink, BookOpen,
-  RotateCcw, Play, Pause, ZoomIn, ZoomOut, Maximize2,
-  Minimize2, Sparkles, CheckCircle2, ShieldCheck, MapPin,
-  RefreshCw, Filter, ArrowLeft, Menu, Radio, Flame,
-  Newspaper, Eye, SlidersHorizontal, ChevronRight, X
+  RotateCcw, Play, Pause, ZoomIn, ZoomOut,
+  Sparkles, CheckCircle2, ShieldCheck, MapPin,
+  RefreshCw, Filter, ArrowLeft, Menu, Radio,
+  Newspaper, Eye, ChevronRight, X
 } from 'lucide-react';
 import { Interactive3DGlobe, GlobeSource } from '../components/Interactive3DGlobe';
 import { ContentViewer } from '../components/content';
@@ -140,7 +140,7 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
     url: 'https://techcrunch.com/2026/09/multimodal-ai-breakthroughs',
     source_tier: 2,
     credibility_score: 0.93,
-    category: 'AI & Engineering',
+    category: 'Technology & AI',
     location: {
       city: 'San Francisco',
       state: 'California',
@@ -156,7 +156,7 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
     id: 'tr-007',
     title: 'Tokyo Metropolitan Clean Energy Grid integrates oceanic tidal power arrays',
     snippet: 'Japanese energy ministry connects offshore wave kinetic turbines into Kanto regional grid, cutting fossil dependency.',
-    source: 'NHK / Wire',
+    source: 'Reuters',
     domain: 'reuters.com',
     url: 'https://www.reuters.com/business/energy/japan-tidal-energy-grid',
     source_tier: 1,
@@ -245,7 +245,7 @@ const DEFAULT_GLOBAL_TRENDING_SOURCES: GlobeSource[] = [
     url: 'https://www.ndtv.com/india-news/indian-space-startups-launch-contracts',
     source_tier: 2,
     credibility_score: 0.94,
-    category: 'Space & Commerce',
+    category: 'Science & Aerospace',
     location: {
       city: 'Hyderabad',
       state: 'Telangana',
@@ -293,11 +293,17 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
   const [selectedArticle, setSelectedArticle] = useState<GlobeSource | null>(null);
   const [showArticleReader, setShowArticleReader] = useState<boolean>(false);
 
+  // Globe control refs
+  const flyToRef = useRef<((lat: number, lng: number) => void) | null>(null);
+  const resetRef = useRef<(() => void) | null>(null);
+  const toggleAutoRotateRef = useRef<(() => void) | null>(null);
+  const zoomInRef = useRef<(() => void) | null>(null);
+  const zoomOutRef = useRef<(() => void) | null>(null);
+
   // Fetch live global trending stories from backend discovery APIs and RSS feeds
   const fetchTrendingFeed = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // Query discovery feeds
       const res = await api.searchUnifiedDiscovery({
         query: 'global news headlines technology economy geopolitics',
         keywords: ['global', 'breaking', 'technology', 'world', 'india', 'economy'],
@@ -305,7 +311,6 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
       });
 
       if (res && Array.isArray(res.sources) && res.sources.length > 0) {
-        // Merge live sources with existing geocoded sources
         const liveSources: GlobeSource[] = res.sources.map((s: any, idx: number) => ({
           id: `live-tr-${idx + 1}-${Date.now()}`,
           title: s.title,
@@ -321,7 +326,6 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
 
         setSources((prev) => {
           const combined = [...liveSources, ...DEFAULT_GLOBAL_TRENDING_SOURCES];
-          // deduplicate by title
           const seen = new Set();
           return combined.filter((item) => {
             const duplicate = seen.has(item.title);
@@ -354,6 +358,31 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
     return true;
   });
 
+  // Extract distinct publishers for quick fly-to navigation pills
+  const distinctPublishers = useMemo(() => {
+    const map = new Map<string, { publisher: string; location: string; lat: number; lng: number; tier: number; count: number }>();
+    for (const src of filteredSources) {
+      if (!src.location) continue;
+      const pubName = src.source || src.domain || 'News';
+      const locStr = src.location.city ? `${src.location.city}, ${src.location.country_code || src.location.country || ''}` : src.location.formatted || 'Global';
+      const key = `${pubName}-${locStr}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          publisher: pubName,
+          location: locStr,
+          lat: src.location.lat,
+          lng: src.location.lng,
+          tier: src.source_tier || 2,
+          count: 1,
+        });
+      } else {
+        const item = map.get(key)!;
+        item.count += 1;
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [filteredSources]);
+
   const categories = ['All', 'Technology', 'Science', 'Finance', 'Geopolitics', 'Energy'];
 
   const handleArticleClick = (article: GlobeSource) => {
@@ -361,18 +390,24 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
     setShowArticleReader(true);
   };
 
+  const handleFlyToPublisher = (lat: number, lng: number) => {
+    if (flyToRef.current) {
+      flyToRef.current(lat, lng);
+    }
+  };
+
   return (
     <div className="h-full w-full flex flex-col relative overflow-hidden bg-slate-950 text-white font-sans select-none">
       
-      {/* Top Floating Glass HUD Bar */}
-      <div className="absolute top-4 left-4 right-4 z-40 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+      {/* Top Floating Header HUD (Zero overlap, clean and aligned) */}
+      <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
         
-        {/* Left: Navigation & Branding Pill */}
-        <div className="flex items-center space-x-2 pointer-events-auto">
+        {/* Left: Navigation & Branding */}
+        <div className="flex items-center space-x-2.5 pointer-events-auto">
           {!isSidebarOpen && onToggleSidebar && (
             <button
               onClick={() => onToggleSidebar(true)}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-orange-600/90 border border-orange-500/30 text-white transition shadow-lg backdrop-blur-md cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-orange-600/90 border border-orange-500/40 text-white transition shadow-lg backdrop-blur-md cursor-pointer"
               title="Open Navigation Menu"
             >
               <Menu className="w-4 h-4 text-orange-400" />
@@ -383,7 +418,7 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition shadow-lg backdrop-blur-md cursor-pointer text-xs font-semibold"
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition shadow-lg backdrop-blur-md cursor-pointer text-xs font-semibold"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -392,138 +427,207 @@ export const TrendingGlobeView: React.FC<TrendingGlobeViewProps> = ({
 
           <div className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-900/90 border border-orange-500/40 text-white shadow-xl backdrop-blur-md">
             <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
-            <Globe2 className="w-4 h-4 text-orange-500" />
+            <Globe2 className="w-4 h-4 text-orange-400" />
             <span className="text-xs font-black tracking-tight">Global Trending 3D Globe</span>
-            <span className="hidden sm:inline-block text-[10px] text-orange-300/80 font-mono">
-              • {filteredSources.length} Pins Live
+            <span className="text-[10px] text-orange-300/80 font-mono pl-1 border-l border-slate-700">
+              {filteredSources.length} Pins Live
             </span>
           </div>
         </div>
 
-        {/* Right: Telemetry & Controls */}
-        <div className="flex items-center space-x-2 pointer-events-auto">
-          {/* Live Ingestion Stream Status Badge */}
-          <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs font-bold shadow-lg backdrop-blur-md">
+        {/* Right: Live Telemetry Indicator & Tier Legend */}
+        <div className="flex items-center space-x-2.5 pointer-events-auto">
+          {/* Live Telemetry Stream Status */}
+          <div className="hidden sm:flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs font-bold shadow-lg backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Live Telemetry Stream Active</span>
             <span className="text-[10px] text-emerald-300/70 font-mono">({lastUpdated})</span>
           </div>
 
-          {/* Manual Refresh button */}
-          <button
-            onClick={fetchTrendingFeed}
-            disabled={isRefreshing}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-orange-600 border border-orange-500/30 text-white transition shadow-lg backdrop-blur-md cursor-pointer text-xs font-bold disabled:opacity-50"
-            title="Poll fresh trending news from APIs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-orange-400' : 'text-orange-400'}`} />
-            <span className="hidden sm:inline">Refresh Trends</span>
-          </button>
+          {/* Tier Legend */}
+          <div className="hidden lg:flex items-center space-x-3 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-[11px] shadow-lg backdrop-blur-md">
+            <div className="flex items-center space-x-1.5 text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-[10px] font-bold">Tier 1 Institutional</span>
+            </div>
+            <div className="flex items-center space-x-1.5 text-orange-400">
+              <span className="w-2 h-2 rounded-full bg-orange-400" />
+              <span className="text-[10px] font-bold">Tier 2 Mainstream</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Floating Filter Pills on Upper Center */}
-      <div className="absolute top-18 left-1/2 -translate-x-1/2 z-30 flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/85 border border-slate-700/80 backdrop-blur-md shadow-2xl max-w-[90vw]">
-        
-        {/* Tier Filters */}
-        <button
-          onClick={() => setSelectedTier('all')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-            selectedTier === 'all'
-              ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          All Tiers
-        </button>
-
-        <button
-          onClick={() => setSelectedTier(1)}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1 ${
-            selectedTier === 1
-              ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <span>Tier 1 Institutional</span>
-        </button>
-
-        <button
-          onClick={() => setSelectedTier(2)}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1 ${
-            selectedTier === 2
-              ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <span>Tier 2 Mainstream</span>
-        </button>
-
-        <div className="w-px h-4 bg-slate-700 mx-1 hidden sm:block" />
-
-        {/* Category Filters */}
-        {categories.slice(1).map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
-            className={`hidden sm:inline-block px-2.5 py-1 rounded-xl text-[11px] font-semibold transition cursor-pointer ${
-              selectedCategory === cat
-                ? 'bg-orange-500 text-white font-bold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Full-Page 3D Globe Canvas Container */}
+      {/* Main Full-Page 3D Globe Canvas Viewport */}
       <div className="flex-1 w-full h-full relative">
         <Interactive3DGlobe
           sources={filteredSources}
           onSelectArticle={handleArticleClick}
-          title="Global Live Trending Intelligence Globe"
+          fullPageMode={true}
+          hideInternalHeader={true}
+          onFlyToRef={flyToRef}
+          onResetRef={resetRef}
+          onToggleAutoRotateRef={toggleAutoRotateRef}
+          onZoomInRef={zoomInRef}
+          onZoomOutRef={zoomOutRef}
         />
+
+        {/* Floating Rotation & Zoom Helper Tip (Bottom-Left) */}
+        <div className="absolute bottom-28 sm:bottom-24 left-4 bg-slate-900/80 backdrop-blur-md border border-slate-700/70 px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center space-x-2 pointer-events-none shadow-lg z-30">
+          <Compass className="w-3.5 h-3.5 text-sky-400" />
+          <span>Drag 360° to rotate • Scroll wheel to zoom map (0.7x – 4.5x) • Click pin for details</span>
+        </div>
       </div>
 
-      {/* Bottom Floating Trending News Ticker Bar */}
-      <div className="absolute bottom-4 left-4 right-4 z-30 pointer-events-none">
-        <div className="p-3 sm:p-4 rounded-3xl bg-slate-900/90 border border-orange-500/30 backdrop-blur-xl shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pointer-events-auto">
+      {/* Consolidated Clean Bottom Controls Dock */}
+      <div className="absolute bottom-3 left-3 right-3 z-30 pointer-events-none">
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900/95 border border-orange-500/35 backdrop-blur-xl shadow-2xl flex flex-col gap-2.5 pointer-events-auto max-w-full">
           
-          {/* Ticker Title */}
-          <div className="flex items-center space-x-2 shrink-0">
-            <div className="p-1.5 rounded-lg bg-orange-600/30 text-orange-400 border border-orange-500/40">
-              <Flame className="w-4 h-4 text-orange-400 animate-bounce" />
+          {/* Row 1: Tier Wise Filtering & Publishers Navigation Strip */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-800/90 pb-2">
+            
+            {/* Tier Filters Group */}
+            <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
+              <span className="text-[10px] font-black uppercase text-slate-400 px-1.5 flex items-center space-x-1">
+                <Filter className="w-3 h-3 text-orange-400" />
+                <span>Tier:</span>
+              </span>
+              <button
+                onClick={() => setSelectedTier('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  selectedTier === 'all'
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                All Tiers
+              </button>
+              <button
+                onClick={() => setSelectedTier(1)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 ${
+                  selectedTier === 1
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>Tier 1 Institutional</span>
+              </button>
+              <button
+                onClick={() => setSelectedTier(2)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 ${
+                  selectedTier === 2
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-orange-400" />
+                <span>Tier 2 Mainstream</span>
+              </button>
             </div>
-            <div>
-              <div className="text-xs font-black text-white tracking-wide uppercase flex items-center space-x-1.5">
-                <span>World Trending Pulse</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              </div>
-              <p className="text-[10px] text-slate-400 font-medium">Click any pin on the 3D globe to inspect verified provenance</p>
+
+            <div className="w-px h-6 bg-slate-800 hidden sm:block" />
+
+            {/* Publishers Quick Fly-to Navigation Strip */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto flex-1 custom-scrollbar py-0.5 min-w-0">
+              <span className="text-slate-400 font-bold flex-shrink-0 flex items-center space-x-1 text-[11px] px-1">
+                <Newspaper className="w-3.5 h-3.5 text-orange-400" />
+                <span>Publishers:</span>
+              </span>
+              {distinctPublishers.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleFlyToPublisher(item.lat, item.lng)}
+                  className="px-2.5 py-1 rounded-xl bg-slate-800/90 hover:bg-orange-600/30 text-slate-200 hover:text-white border border-slate-700/80 hover:border-orange-500/60 font-medium transition flex items-center space-x-1.5 flex-shrink-0 text-xs shadow-xs cursor-pointer group"
+                  title={`Focus 3D Earth on ${item.publisher} (${item.location})`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    item.tier === 1 ? 'bg-emerald-400' : 'bg-orange-400'
+                  }`} />
+                  <span className="font-semibold text-white group-hover:text-orange-300">{item.publisher}</span>
+                  <span className="text-slate-400 text-[10px]">({item.location})</span>
+                  <span className="text-[10px] text-orange-400 font-mono font-bold">[{item.count}]</span>
+                </button>
+              ))}
             </div>
+
           </div>
 
-          {/* Trending Headline Pills Strip */}
-          <div className="flex items-center space-x-2 overflow-x-auto w-full custom-scrollbar py-1">
-            {filteredSources.slice(0, 6).map((src) => (
-              <div
-                key={src.id}
-                onClick={() => handleArticleClick(src)}
-                className="shrink-0 max-w-xs p-2.5 rounded-2xl bg-slate-800/80 hover:bg-orange-600/30 border border-slate-700 hover:border-orange-500/50 transition cursor-pointer space-y-1 shadow-sm group"
+          {/* Row 2: Categories, Reset, Refresh, Auto-Rotate & Zoom Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            
+            {/* Category Pills */}
+            <div className="flex items-center space-x-1 overflow-x-auto">
+              <span className="text-[10px] font-bold text-slate-400 uppercase mr-1 hidden sm:inline">Topics:</span>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    (cat === 'All' && selectedCategory === 'all') || selectedCategory === cat
+                      ? 'bg-orange-600 text-white font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Actions: Reset, Refresh, Auto-Rotate & Zoom Buttons */}
+            <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 ml-auto">
+              
+              {/* Reset 360° View Button */}
+              <button
+                onClick={() => resetRef.current && resetRef.current()}
+                className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition cursor-pointer text-xs font-bold flex items-center space-x-1 shadow-xs"
+                title="Reset 360° Globe Position"
               >
-                <div className="flex items-center justify-between text-[10px] text-slate-400">
-                  <span className="font-bold text-orange-400 truncate max-w-[120px]">{src.source}</span>
-                  <span className="text-[9px] font-mono text-slate-400 flex items-center space-x-1">
-                    <MapPin className="w-2.5 h-2.5 text-orange-400" />
-                    <span>{src.location?.city || 'Global'}</span>
-                  </span>
-                </div>
-                <h4 className="text-xs font-semibold text-slate-200 group-hover:text-white line-clamp-1">
-                  {src.title}
-                </h4>
-              </div>
-            ))}
+                <RotateCcw className="w-3.5 h-3.5 text-orange-400" />
+                <span>Reset</span>
+              </button>
+
+              {/* Refresh Trends Button */}
+              <button
+                onClick={fetchTrendingFeed}
+                disabled={isRefreshing}
+                className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-orange-600 text-slate-200 hover:text-white border border-slate-700 hover:border-orange-500/50 transition cursor-pointer text-xs font-bold flex items-center space-x-1 shadow-xs disabled:opacity-50"
+                title="Poll Live Trending News Updates"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-orange-400' : 'text-orange-400'}`} />
+                <span>Refresh</span>
+              </button>
+
+              <div className="w-px h-4 bg-slate-800 mx-0.5" />
+
+              {/* Auto-Rotate Toggle Button */}
+              <button
+                onClick={() => toggleAutoRotateRef.current && toggleAutoRotateRef.current()}
+                className="px-2 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center space-x-1 text-xs font-semibold"
+                title="Toggle 360° Continuous Earth Rotation"
+              >
+                <Play className="w-3.5 h-3.5 text-orange-400" />
+                <span className="hidden sm:inline">Rotate</span>
+              </button>
+
+              {/* Zoom In & Out */}
+              <button
+                onClick={() => zoomInRef.current && zoomInRef.current()}
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                title="Zoom In (Map View Zooming)"
+              >
+                <ZoomIn className="w-3.5 h-3.5 text-orange-400" />
+              </button>
+
+              <button
+                onClick={() => zoomOutRef.current && zoomOutRef.current()}
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-3.5 h-3.5 text-orange-400" />
+              </button>
+            </div>
+
           </div>
 
         </div>

@@ -37,6 +37,13 @@ interface Interactive3DGlobeProps {
   sources: GlobeSource[];
   onSelectArticle?: (article: GlobeSource) => void;
   title?: string;
+  fullPageMode?: boolean;
+  hideInternalHeader?: boolean;
+  onFlyToRef?: React.MutableRefObject<((lat: number, lng: number) => void) | null>;
+  onResetRef?: React.MutableRefObject<(() => void) | null>;
+  onToggleAutoRotateRef?: React.MutableRefObject<(() => void) | null>;
+  onZoomInRef?: React.MutableRefObject<(() => void) | null>;
+  onZoomOutRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 // Realistic Earth continent outlines & major islands (lat, lng pairs)
@@ -144,7 +151,14 @@ const KNOWN_PUBLISHER_COORDS: Record<string, { city: string; state: string; coun
 export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
   sources,
   onSelectArticle,
-  title = "3D Realistic Geo-Intelligence Globe"
+  title = "3D Realistic Geo-Intelligence Globe",
+  fullPageMode = false,
+  hideInternalHeader = false,
+  onFlyToRef,
+  onResetRef,
+  onToggleAutoRotateRef,
+  onZoomInRef,
+  onZoomOutRef,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -279,6 +293,20 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     animateFly();
   }, [rotationY, rotationX]);
 
+  // Expose refs for parent controls
+  useEffect(() => {
+    if (onFlyToRef) onFlyToRef.current = flyToLocation;
+    if (onResetRef) onResetRef.current = () => {
+      setRotationY(-78);
+      setRotationX(18);
+      setZoom(1.0);
+      setIsAutoRotate(true);
+    };
+    if (onToggleAutoRotateRef) onToggleAutoRotateRef.current = () => setIsAutoRotate((p) => !p);
+    if (onZoomInRef) onZoomInRef.current = () => setZoom((prev) => Math.min(4.5, prev + 0.3));
+    if (onZoomOutRef) onZoomOutRef.current = () => setZoom((prev) => Math.max(0.7, prev - 0.3));
+  }, [onFlyToRef, onResetRef, onToggleAutoRotateRef, onZoomInRef, onZoomOutRef, flyToLocation]);
+
   // Realistic 3D Globe Canvas Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -299,7 +327,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
 
       const cx = width / 2;
       const cy = height / 2;
-      const baseRadius = Math.min(width, height) * 0.38;
+      const baseRadius = Math.min(width, height) * (fullPageMode ? 0.46 : 0.38);
       const R = baseRadius * zoom;
 
       const rotYRad = (rotationY * Math.PI) / 180;
@@ -715,6 +743,176 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     isDraggingRef.current = false;
   };
 
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+    setZoom((prev) => Math.max(0.7, Math.min(4.5, Number((prev * zoomFactor).toFixed(2)))));
+  };
+
+  // If in fullPageMode, render an immersive full-size container without top header clutter
+  if (fullPageMode || hideInternalHeader) {
+    return (
+      <div
+        ref={containerRef}
+        className="relative w-full h-full bg-radial from-slate-900 via-slate-950 to-black flex items-center justify-center select-none cursor-grab active:cursor-grabbing overflow-hidden"
+      >
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onClick={handleClick}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="w-full h-full block"
+        />
+
+        {/* Hover Tooltip */}
+        <AnimatePresence>
+          {hoveredPoint && !activeModalSource && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                left: Math.min(hoveredPoint.screenX + 15, (containerRef.current?.clientWidth || 400) - 250),
+                top: Math.max(10, Math.min(hoveredPoint.screenY - 30, (containerRef.current?.clientHeight || 400) - 120)),
+              }}
+              className="absolute z-50 pointer-events-none p-3 rounded-2xl bg-slate-900/95 border border-orange-500/50 shadow-2xl backdrop-blur-xl text-xs max-w-xs space-y-1.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold text-white truncate text-[11px]">
+                  {(hoveredPoint.source as any)._mediaEmblem || hoveredPoint.source.source}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                  Tier {hoveredPoint.source.source_tier || 1}
+                </span>
+              </div>
+              <p className="text-slate-300 text-[11px] line-clamp-2 leading-relaxed font-medium">
+                {hoveredPoint.source.title}
+              </p>
+              <div className="flex items-center space-x-1 text-[10px] text-orange-400 font-semibold pt-1 border-t border-slate-800">
+                <MapPin className="w-3 h-3" />
+                <span>{hoveredPoint.source.location?.city}, {hoveredPoint.source.location?.country}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Interactive Pin Click Article Popup Modal */}
+        <AnimatePresence>
+          {activeModalSource && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                className="bg-slate-900 rounded-3xl border border-slate-700 shadow-2xl max-w-lg w-full overflow-hidden text-slate-100"
+              >
+                {/* Modal Header with Publisher & Geolocation */}
+                <div className="px-6 py-5 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-b border-slate-800 flex items-start justify-between gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-sky-500 text-white flex items-center justify-center shadow-lg flex-shrink-0">
+                      <Newspaper className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-sky-400 flex items-center space-x-1.5">
+                        <span>{activeModalSource.source || activeModalSource.domain || 'Publisher'}</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-300 flex items-center space-x-1">
+                          <MapPin className="w-3 h-3 text-emerald-400" />
+                          <span>{activeModalSource.location?.formatted || 'Geocoded'}</span>
+                        </span>
+                      </div>
+                      <h4 className="text-sm sm:text-base font-bold text-white line-clamp-2 mt-0.5">
+                        {activeModalSource.title}
+                      </h4>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveModalSource(null)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-4 text-xs text-slate-300">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg font-bold ${
+                      activeModalSource.source_tier === 1 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+                      activeModalSource.source_tier === 2 ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40' :
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    }`}>
+                      Tier {activeModalSource.source_tier || 2} Source
+                    </span>
+
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 font-semibold">
+                      Publisher: {activeModalSource.source || activeModalSource.domain}
+                    </span>
+
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold">
+                      Trust Score: {Math.round((activeModalSource.credibility_score || 0.85) * 100)}%
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 leading-relaxed text-slate-200 whitespace-pre-wrap">
+                    {activeModalSource.snippet || 'Reporting on verified intelligence development.'}
+                  </div>
+
+                  {activeModalSource.location && (
+                    <div className="text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-800 pt-3">
+                      <div className="flex items-center space-x-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>
+                          Verified at <strong>{activeModalSource.location.formatted}</strong> ({activeModalSource.location.lat.toFixed(3)}°, {activeModalSource.location.lng.toFixed(3)}°)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer Actions */}
+                <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                  {onSelectArticle && (
+                    <button
+                      onClick={() => {
+                        const src = activeModalSource;
+                        setActiveModalSource(null);
+                        onSelectArticle(src);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold flex items-center space-x-1.5 transition shadow-md cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>Inspect Full Source Dossier</span>
+                    </button>
+                  )}
+
+                  {activeModalSource.url && (
+                    <a
+                      href={activeModalSource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold flex items-center space-x-1.5 transition"
+                    >
+                      <span>Open External Site</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden mb-6 transition-all text-white">
       {/* Realistic Globe Header Bar */}
@@ -751,7 +949,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
           </button>
 
           <button
-            onClick={() => setZoom((prev) => Math.min(1.4, prev + 0.1))}
+            onClick={() => setZoom((prev) => Math.min(3.5, prev + 0.2))}
             className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
             title="Zoom In"
           >
@@ -759,7 +957,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
           </button>
 
           <button
-            onClick={() => setZoom((prev) => Math.max(0.75, prev - 0.1))}
+            onClick={() => setZoom((prev) => Math.max(0.7, prev - 0.2))}
             className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
             title="Zoom Out"
           >
@@ -829,6 +1027,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onClick={handleClick}
+          onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -838,7 +1037,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
         {/* Rotation Helper Watermark */}
         <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center space-x-2 pointer-events-none shadow-md">
           <Compass className="w-3.5 h-3.5 text-sky-400" />
-          <span>Drag 360° to rotate Earth • Click pin for publisher dossier</span>
+          <span>Drag 360° to rotate Earth • Scroll to zoom map • Click pin for dossier</span>
         </div>
 
         {/* Source Tier Legend */}
