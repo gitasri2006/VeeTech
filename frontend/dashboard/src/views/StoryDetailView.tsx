@@ -73,7 +73,7 @@ According to company executives, the platform incorporates indigenous software t
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <span className="px-2.5 py-1 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="px-2.5 py-1 rounded text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
               Tier 1 Authority
             </span>
             <span className="text-xs text-slate-500 font-medium">{story.source}</span>
@@ -95,7 +95,7 @@ According to company executives, the platform incorporates indigenous software t
             href={story.canonical_url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center space-x-1 text-indigo-600 hover:underline font-semibold"
+            className="flex items-center space-x-1 text-orange-600 hover:text-orange-700 hover:underline font-semibold"
           >
             <span>Canonical Source</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -108,7 +108,7 @@ According to company executives, the platform incorporates indigenous software t
         {/* Left Column: Full Extracted Text */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-2">
-            <FileText className="w-4 h-4 text-indigo-600" />
+            <FileText className="w-4 h-4 text-orange-600" />
             <span>Extracted Normalized Content</span>
           </h2>
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
@@ -134,7 +134,7 @@ According to company executives, the platform incorporates indigenous software t
                     href={ev.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-indigo-600 border border-slate-200 transition"
+                    className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-orange-600 border border-slate-200 transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
@@ -185,7 +185,7 @@ According to company executives, the platform incorporates indigenous software t
                 <span>Stale Context / Recycled Claim</span>
                 <span>ORIGINAL</span>
               </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
                 <span>Human Review Required</span>
                 <span>NO (AUTO-CLEARED)</span>
               </div>

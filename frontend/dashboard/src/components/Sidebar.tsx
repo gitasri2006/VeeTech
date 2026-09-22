@@ -85,12 +85,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => onSelectView(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition ${
                       isActive
-                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-orange-600' : 'text-slate-500'}`} />
                       <span>{item.label}</span>
                     </div>
                     {(item as any).badge !== undefined && (

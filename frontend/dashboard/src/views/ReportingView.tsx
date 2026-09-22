@@ -6,7 +6,7 @@ export const ReportingView: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       {/* Header */}
       <div>
-        <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
           <BarChart3 className="w-4 h-4" />
           <span>Analytics & Reporting</span>
         </div>
@@ -19,7 +19,7 @@ export const ReportingView: React.FC = () => {
       {/* Export Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+          <div className="w-10 h-10 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
             <FileText className="w-5 h-5" />
           </div>
           <div>
@@ -29,13 +29,13 @@ export const ReportingView: React.FC = () => {
             </p>
           </div>
           <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-800 font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center space-x-2 transition border border-slate-300">
-            <Download className="w-4 h-4 text-indigo-600" />
+            <Download className="w-4 h-4 text-orange-600" />
             <span>Export Executive PDF</span>
           </button>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+          <div className="w-10 h-10 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
             <FileSpreadsheet className="w-5 h-5" />
           </div>
           <div>
@@ -45,7 +45,7 @@ export const ReportingView: React.FC = () => {
             </p>
           </div>
           <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-800 font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center space-x-2 transition border border-slate-300">
-            <Download className="w-4 h-4 text-blue-600" />
+            <Download className="w-4 h-4 text-orange-600" />
             <span>Export CSV Dataset</span>
           </button>
         </div>

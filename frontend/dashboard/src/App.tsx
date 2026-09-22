@@ -25,6 +25,8 @@ export const App: React.FC = () => {
     name: string;
     email: string;
     role: UserRole;
+    organization?: string;
+    designation?: string;
   } | null>(() => {
     try {
       const saved = localStorage.getItem('discovery_auth_user');
@@ -92,7 +94,7 @@ export const App: React.FC = () => {
   }, [sessions, currentUser?.email]);
 
   const handleLoginSuccess = (
-    user: { id: string; name: string; email: string; role: UserRole },
+    user: { id: string; name: string; email: string; role: UserRole; organization?: string; designation?: string },
     token: string
   ) => {
     try {
@@ -159,12 +161,22 @@ export const App: React.FC = () => {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const handleUpdateUser = (updated: { id: string; name: string; email: string; role: UserRole; organization?: string; designation?: string }) => {
+    setCurrentUser(updated);
+    try {
+      localStorage.setItem('discovery_auth_user', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update user preferences', e);
+    }
+  };
+
   const renderActiveView = () => {
     switch (currentView) {
       case 'discovery':
         return (
           <DiscoveryChatView
             currentUser={currentUser}
+            onUpdateUser={handleUpdateUser}
             activeSessionId={activeSessionId}
             sessions={sessions}
             onUpdateSessions={(updated) => setSessions(updated)}
@@ -216,6 +228,7 @@ export const App: React.FC = () => {
         return (
           <DiscoveryChatView
             currentUser={currentUser}
+            onUpdateUser={handleUpdateUser}
             activeSessionId={activeSessionId}
             sessions={sessions}
             onUpdateSessions={(updated) => setSessions(updated)}

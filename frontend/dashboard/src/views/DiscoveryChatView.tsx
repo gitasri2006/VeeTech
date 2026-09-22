@@ -8,7 +8,7 @@ import {
   Copy, ArrowDown, User, Bot, Search, FileText, CheckCircle,
   Folder, Cpu, MoreHorizontal, PanelLeft, PanelLeftClose, Trash2,
   BookMarked, Edit3, Plus, Library, Menu, Play, Tv, Eye, SlidersHorizontal,
-  Settings, MapPin
+  Settings, MapPin, FileDown, Download
 } from 'lucide-react';
 import { api, UnifiedSearchOptions } from '../services/api';
 import { UserRole, Rule } from '../types';
@@ -16,6 +16,7 @@ import { MediaAutomationBackground } from '../components/MediaAutomationBackgrou
 import { ContentViewer } from '../components/content';
 import { AgentInspectorModal } from '../components/AgentInspectorModal';
 import { Interactive3DGlobe } from '../components/Interactive3DGlobe';
+import { exportDossierToDocx } from '../services/docxExport';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English (Global)' },
@@ -73,7 +74,10 @@ export interface DiscoveryChatViewProps {
     name: string;
     email: string;
     role: UserRole;
+    organization?: string;
+    designation?: string;
   } | null;
+  onUpdateUser?: (updated: { id: string; name: string; email: string; role: UserRole; organization?: string; designation?: string }) => void;
   activeSessionId?: string;
   sessions?: InquirySession[];
   onUpdateSessions?: (updated: InquirySession[]) => void;
@@ -87,6 +91,7 @@ export interface DiscoveryChatViewProps {
 
 export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   currentUser,
+  onUpdateUser,
   activeSessionId: propActiveSessionId,
   sessions: propSessions,
   onUpdateSessions,
@@ -101,6 +106,38 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   const [inputQuery, setInputQuery] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'audio' | 'video'>('text');
+
+  // Profile preferences modal state triggered right after login on discovery page
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(() => {
+    return sessionStorage.getItem('open_profile_setup_on_discovery') === 'true';
+  });
+  const [profileName, setProfileName] = useState<string>(currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : ''));
+  const [profileEmail, setProfileEmail] = useState<string>(currentUser?.email || '');
+  const [profileRole, setProfileRole] = useState<UserRole>(currentUser?.role || 'Analyst');
+  const [profileOrg, setProfileOrg] = useState<string>(currentUser?.organization || 'Enterprise Intelligence Network');
+  const [profileDesignation, setProfileDesignation] = useState<string>(currentUser?.designation || 'Lead Intelligence Analyst');
+  const [profileSavedToast, setProfileSavedToast] = useState<boolean>(false);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated = {
+      id: currentUser?.id || `usr-${Date.now()}`,
+      name: profileName || profileEmail.split('@')[0],
+      email: profileEmail,
+      role: profileRole,
+      organization: profileOrg,
+      designation: profileDesignation,
+    };
+    if (onUpdateUser) {
+      onUpdateUser(updated);
+    }
+    sessionStorage.removeItem('open_profile_setup_on_discovery');
+    setProfileSavedToast(true);
+    setTimeout(() => {
+      setShowProfileModal(false);
+      setProfileSavedToast(false);
+    }, 800);
+  };
   
   const activeSessionId = propActiveSessionId || 'sess-1';
   const sessions = propSessions || [];
@@ -142,6 +179,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
   const [activeModalArticle, setActiveModalArticle] = useState<any | null>(null);
   const [selectedTierFilter, setSelectedTierFilter] = useState<{ [turnId: string]: 'all' | 1 | 2 | 3 }>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -430,7 +468,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
     }
     if (t === 2) {
       return (
-        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
           Tier 2 (Trade & National Media)
         </span>
       );
@@ -464,15 +502,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
         <MediaAutomationBackground className="opacity-35" nodeCount={45} interactive={true} showMediaLabels={false} />
         
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between py-2.5 border-b border-slate-200 mb-2 flex-shrink-0">
+        <div className="flex items-center justify-between py-2.5 border-b border-orange-200/60 mb-2 flex-shrink-0">
           <div className="flex items-center space-x-2">
             {!isSidebarOpen && onToggleSidebar && (
               <button
                 onClick={() => onToggleSidebar(true)}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 hover:text-slate-900 transition shadow-sm mr-2 cursor-pointer"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-orange-50 border border-orange-200 text-slate-700 hover:text-orange-700 transition shadow-xs mr-2 cursor-pointer"
                 title="Open Menu"
               >
-                <Menu className="w-4 h-4 text-indigo-600" />
+                <Menu className="w-4 h-4 text-orange-600" />
                 <span className="text-xs font-semibold">Open Menu</span>
               </button>
             )}
@@ -492,8 +530,8 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
           {messages.length === 0 ? (
             /* Empty / Welcome State */
             <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-200 p-0.5 mb-6 flex items-center justify-center shadow-sm">
-                <Compass className="w-8 h-8 text-indigo-600" />
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200 p-0.5 mb-6 flex items-center justify-center shadow-xs">
+                <Compass className="w-8 h-8 text-orange-600" />
               </div>
 
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
@@ -518,22 +556,22 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                     className="flex justify-end items-start space-x-3 scroll-mt-6"
                   >
-                    <div className="max-w-2xl bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-sm px-5 py-3.5 text-slate-900 shadow-sm">
+                    <div className="max-w-2xl bg-orange-50/90 border border-orange-200 rounded-2xl rounded-tr-sm px-5 py-3.5 text-slate-900 shadow-xs">
                       {msg.mediaBase64 && msg.modality === 'image' && (
-                        <div className="mb-3 rounded-lg overflow-hidden border border-indigo-200 max-w-xs">
+                        <div className="mb-3 rounded-lg overflow-hidden border border-orange-200 max-w-xs">
                           <img src={msg.mediaBase64} alt="Uploaded Media" className="w-full h-auto object-cover max-h-48" />
                         </div>
                       )}
                       {msg.mediaFileName && (
-                        <div className="text-xs font-mono text-indigo-700 mb-1 flex items-center space-x-1.5 font-semibold">
+                        <div className="text-xs font-mono text-orange-700 mb-1 flex items-center space-x-1.5 font-semibold">
                           <UploadCloud className="w-3.5 h-3.5" />
                           <span>{msg.mediaFileName}</span>
                         </div>
                       )}
                       <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">{msg.query}</p>
-                      <div className="text-[10px] text-indigo-500 mt-1 text-right font-medium">{msg.timestamp}</div>
+                      <div className="text-[10px] text-orange-500 mt-1 text-right font-medium">{msg.timestamp}</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 flex-shrink-0 mt-1 shadow-sm font-semibold">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 flex-shrink-0 mt-1 shadow-xs font-semibold">
                       <User className="w-4 h-4" />
                     </div>
                   </motion.div>
@@ -562,7 +600,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                   transition={{ duration: 0.35, ease: 'easeOut' }}
                   className="flex items-start space-x-3 scroll-mt-6"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
                     <Bot className="w-4 h-4" />
                   </div>
 
@@ -571,7 +609,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                     <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-3">
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center space-x-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-orange-600 flex items-center space-x-1">
                             <Sparkles className="w-3.5 h-3.5 mr-1" />
                             <span>Intelligence Brief</span>
                           </span>
@@ -589,11 +627,39 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                         {getVerdictBadge(intel?.authenticity_verdict)}
                         <button
                           onClick={() => setInspectingTurn(msg)}
-                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition cursor-pointer shadow-sm"
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-bold transition cursor-pointer shadow-xs"
                           title="Inspect Full Multi-Agent Pipeline, OCR/ASR, and Evidence Analysis"
                         >
-                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <Eye className="w-3.5 h-3.5 text-orange-600" />
                           <span>Inspect</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!result) return;
+                            try {
+                              setDownloadingId(msg.id);
+                              await exportDossierToDocx(result, msg.query);
+                            } catch (err) {
+                              console.error('Failed to export DOCX:', err);
+                            } finally {
+                              setTimeout(() => setDownloadingId(null), 1000);
+                            }
+                          }}
+                          disabled={downloadingId === msg.id}
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition cursor-pointer shadow-sm disabled:opacity-75"
+                          title="Download Complete Dossier & Detailed Tier Sources (.docx)"
+                        >
+                          {downloadingId === msg.id ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Generating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="w-3.5 h-3.5" />
+                              <span>Download DOCX</span>
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={() => copyToClipboard(intel?.executive_summary || '', msg.id)}
@@ -608,7 +674,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                     {/* Multimodal OCR/ASR Context Banner if Present */}
                     {result?.multimodal_evidence && (
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-1.5">
-                        <div className="font-semibold text-indigo-700 flex items-center space-x-1.5">
+                        <div className="font-semibold text-orange-700 flex items-center space-x-1.5">
                           <FileText className="w-3.5 h-3.5" />
                           <span>Extracted Multimodal Context ({result.multimodal_evidence.media_type?.toUpperCase()})</span>
                         </div>
@@ -639,7 +705,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                         <ul className="space-y-2">
                           {intel.key_findings.map((finding: string, idx: number) => (
                             <li key={idx} className="flex items-start space-x-2.5 text-sm text-slate-800 font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-2 flex-shrink-0" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-2 flex-shrink-0" />
                               <span className="leading-relaxed">{finding}</span>
                             </li>
                           ))}
@@ -652,10 +718,10 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
-                            <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                            <Layers className="w-3.5 h-3.5 text-orange-600" />
                             <span>Cross-Source Evidence & Consensus Analysis</span>
                           </h3>
-                          <span className="text-xs px-2.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                          <span className="text-xs px-2.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200 font-semibold">
                             {crossAnalysis.consensus_assessment || 'Supported'}
                           </span>
                         </div>
@@ -748,7 +814,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-1.5">
-                          <Building className="w-3.5 h-3.5 text-indigo-600" />
+                          <Building className="w-3.5 h-3.5 text-orange-600" />
                           <span>Source Distribution & Direct Verified Links</span>
                         </h3>
 
@@ -762,7 +828,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                                 onClick={() => setSelectedTierFilter((prev) => ({ ...prev, [msg.id]: t }))}
                                 className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                                   turnTierFilter === t
-                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    ? 'bg-orange-600 text-white shadow-xs'
                                     : 'text-slate-600 hover:text-slate-900'
                                 }`}
                               >
@@ -784,7 +850,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                           {sources.length > 0 && (
                             <button
                               onClick={() => setSelectedTierFilter((prev) => ({ ...prev, [msg.id]: 'all' }))}
-                              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition cursor-pointer"
+                              className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold transition cursor-pointer"
                             >
                               View All {sources.length} Discovered Sources
                             </button>
@@ -795,15 +861,15 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                           {filteredSources.map((src: any, sIdx: number) => (
                             <div
                               key={sIdx}
-                              className="bg-white border border-slate-200 hover:border-indigo-300 rounded-xl p-4 flex flex-col justify-between space-y-3 transition group shadow-sm hover:shadow-md"
+                              className="bg-white border border-slate-200 hover:border-orange-300 rounded-xl p-4 flex flex-col justify-between space-y-3 transition group shadow-xs hover:shadow-md"
                             >
                               <div>
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center space-x-1.5 flex-wrap gap-1">
                                     {getTierBadge(src.source_tier)}
                                     {src.location?.formatted && (
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center space-x-1">
-                                        <MapPin className="w-2.5 h-2.5 text-indigo-600" />
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-50 text-orange-700 border border-orange-200 flex items-center space-x-1">
+                                        <MapPin className="w-2.5 h-2.5 text-orange-600" />
                                         <span>{src.location.formatted}</span>
                                       </span>
                                     )}
@@ -813,7 +879,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                                   </span>
                                 </div>
 
-                                <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                                <h4 className="text-sm font-bold text-slate-900 group-hover:text-orange-600 transition-colors line-clamp-2">
                                   {src.title}
                                 </h4>
                                 <p className="text-xs text-slate-600 mt-1.5 line-clamp-2 leading-relaxed">
@@ -836,7 +902,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                                       </>
                                     ) : (
                                       <>
-                                        <BookOpen className="w-3 h-3 text-indigo-600" />
+                                        <BookOpen className="w-3 h-3 text-orange-600" />
                                         <span>Read In-App</span>
                                       </>
                                     )}
@@ -845,7 +911,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                                     href={src.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition flex items-center space-x-1 font-semibold"
+                                    className="px-2 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 transition flex items-center space-x-1 font-semibold"
                                   >
                                     <span>Open Source</span>
                                     <ExternalLink className="w-3 h-3" />
@@ -873,7 +939,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                               setInputQuery(promptText);
                               executeSearch(promptText);
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs text-slate-700 hover:text-slate-900 transition text-left cursor-pointer font-medium shadow-sm"
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-orange-50 hover:border-orange-200 border border-slate-200 text-xs text-slate-700 hover:text-orange-800 transition text-left cursor-pointer font-medium shadow-xs"
                           >
                             {promptText}
                           </button>
@@ -899,14 +965,14 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                 {/* Header with spinner and current agent state */}
                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-3 mb-6 text-center">
                   <div className="flex items-center space-x-2.5">
-                    <RefreshCw className="w-4 h-4 text-indigo-600 animate-spin" />
+                    <RefreshCw className="w-4 h-4 text-orange-600 animate-spin" />
                     <span className="text-sm font-bold text-slate-900">
                       {PIPELINE_STEPS[pipelineStepIndex - 1]?.desc || 'Analyzing your request...'}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 text-xs text-slate-500">
                     <span className="hidden sm:inline text-slate-300">|</span>
-                    <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-mono text-[11px] font-semibold">
+                    <span className="bg-orange-50 border border-orange-200 px-2 py-0.5 rounded text-orange-800 font-mono text-[11px] font-semibold">
                       {PIPELINE_STEPS[pipelineStepIndex - 1]?.agent}
                     </span>
                     <span className="text-slate-400">~ 3-5 seconds</span>
@@ -926,7 +992,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                             <div
                               className={`flex-1 h-0.5 mx-1 transition-all duration-500 ${
                                 pipelineStepIndex >= step.id
-                                  ? 'bg-indigo-600'
+                                  ? 'bg-orange-600'
                                   : 'bg-slate-200'
                               }`}
                             />
@@ -936,9 +1002,9 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                             <div
                               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                                 isCompleted
-                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
                                   : isActive
-                                  ? 'bg-indigo-600 text-white ring-4 ring-indigo-100 shadow-sm'
+                                  ? 'bg-orange-600 text-white ring-4 ring-orange-100 shadow-sm'
                                   : 'bg-slate-100 text-slate-500 border border-slate-300'
                               }`}
                             >
@@ -952,7 +1018,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                             <span
                               className={`mt-2 text-[11px] font-semibold tracking-tight transition-colors whitespace-nowrap ${
                                 isActive
-                                  ? 'text-indigo-600'
+                                  ? 'text-orange-600 font-bold'
                                   : isCompleted
                                   ? 'text-slate-800'
                                   : 'text-slate-400'
@@ -977,10 +1043,10 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
         <div className="py-3 border-t border-slate-200 bg-slate-50 sticky bottom-0 z-20">
           
           {attachedFile && (
-            <div className="mb-2 p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs max-w-xl shadow-sm">
+            <div className="mb-2 p-2.5 rounded-xl bg-white border border-orange-200 flex items-center justify-between text-xs max-w-xl shadow-xs">
               <div className="flex items-center space-x-2">
-                {attachedFile.modality === 'image' && <ImageIcon className="w-4 h-4 text-indigo-600" />}
-                {attachedFile.modality === 'audio' && <Mic className="w-4 h-4 text-blue-600" />}
+                {attachedFile.modality === 'image' && <ImageIcon className="w-4 h-4 text-orange-600" />}
+                {attachedFile.modality === 'audio' && <Mic className="w-4 h-4 text-orange-600" />}
                 {attachedFile.modality === 'video' && <Video className="w-4 h-4 text-purple-600" />}
                 <span className="font-semibold text-slate-800 truncate">{attachedFile.name}</span>
                 <span className="text-[10px] text-slate-500 uppercase">({attachedFile.modality})</span>
@@ -993,16 +1059,16 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 
           {/* Active Custom Rule Banner if chosen */}
           {selectedRuleId && (
-            <div className="mb-2 p-2 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between text-xs max-w-xl shadow-sm">
-              <div className="flex items-center space-x-2 text-indigo-800">
-                <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+            <div className="mb-2 p-2 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-between text-xs max-w-xl shadow-xs">
+              <div className="flex items-center space-x-2 text-orange-900">
+                <SlidersHorizontal className="w-4 h-4 text-orange-600" />
                 <span className="font-semibold">
                   Active Filter Rule: {availableRules.find((r) => r.id === selectedRuleId)?.name || selectedRuleId}
                 </span>
               </div>
               <button
                 onClick={() => setSelectedRuleId('')}
-                className="p-1 hover:bg-indigo-100 rounded text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                className="p-1 hover:bg-orange-100 rounded text-orange-700 hover:text-orange-900 cursor-pointer"
                 title="Remove rule filter and return to global search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -1010,7 +1076,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
             </div>
           )}
 
-          <div className="bg-white border border-slate-300 rounded-2xl p-2.5 focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600 shadow-sm transition-all">
+          <div className="bg-white border border-slate-300 rounded-2xl p-2.5 focus-within:border-orange-600 focus-within:ring-1 focus-within:ring-orange-600 shadow-xs transition-all">
             <textarea
               ref={textareaRef}
               rows={2}
@@ -1042,7 +1108,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                   }}
                   className={`p-1.5 rounded-lg border transition text-xs flex items-center space-x-1 font-medium ${
                     attachedFile?.modality === 'image'
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      ? 'bg-orange-50 border-orange-300 text-orange-700'
                       : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                   title="Upload Image for OCR & Vision analysis"
@@ -1062,7 +1128,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                   }}
                   className={`p-1.5 rounded-lg border transition text-xs flex items-center space-x-1 font-medium ${
                     attachedFile?.modality === 'audio'
-                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      ? 'bg-orange-50 border-orange-300 text-orange-700'
                       : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                   title="Upload Audio for Whisper ASR"
@@ -1082,7 +1148,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
                   }}
                   className={`p-1.5 rounded-lg border transition text-xs flex items-center space-x-1 font-medium ${
                     attachedFile?.modality === 'video'
-                      ? 'bg-purple-50 border-purple-200 text-purple-700'
+                      ? 'bg-orange-50 border-orange-300 text-orange-700'
                       : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                   title="Upload Video for Keyframe & Audio analysis"
@@ -1093,11 +1159,11 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 
                 {/* Target Language Dropdown */}
                 <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
-                  <Globe2 className="w-3.5 h-3.5 text-indigo-600" />
+                  <Globe2 className="w-3.5 h-3.5 text-orange-600" />
                   <select
                     value={targetLanguage}
                     onChange={(e) => setTargetLanguage(e.target.value)}
-                    className="bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-600"
+                    className="bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-orange-600"
                   >
                     {SUPPORTED_LANGUAGES.map((lang) => (
                       <option key={lang.code} value={lang.code}>
@@ -1109,12 +1175,12 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 
                 {/* Custom User Rule Selector (Optional) */}
                 <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
                   <select
                     value={selectedRuleId}
                     onChange={(e) => setSelectedRuleId(e.target.value)}
-                    className={`border text-xs font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-600 max-w-[160px] truncate ${
-                      selectedRuleId ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold' : 'bg-slate-100 border-slate-200 text-slate-700'
+                    className={`border text-xs font-medium rounded-lg px-2 py-1 focus:outline-none focus:border-orange-600 max-w-[160px] truncate ${
+                      selectedRuleId ? 'bg-orange-50 border-orange-300 text-orange-800 font-semibold' : 'bg-slate-100 border-slate-200 text-slate-700'
                     }`}
                     title="Optional: Select a created rule to filter search results strictly according to rule criteria"
                   >
@@ -1132,7 +1198,7 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
               <button
                 onClick={() => executeSearch()}
                 disabled={isProcessing || (!inputQuery.trim() && !attachedFile)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs transition flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
               >
                 <span>Discover</span>
                 <Send className="w-3.5 h-3.5" />
@@ -1140,6 +1206,139 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Profile Preferences Setup Modal right on Discovery Page */}
+        <AnimatePresence>
+          {showProfileModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                className="bg-white rounded-3xl border border-orange-200 shadow-2xl max-w-md w-full overflow-hidden text-slate-900"
+              >
+                {/* Header */}
+                <div className="px-6 py-5 bg-gradient-to-r from-orange-600 to-amber-600 text-white flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-white shadow-sm">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white tracking-tight">Complete Profile Preferences</h3>
+                      <p className="text-xs text-orange-100">Set your intelligence analyst identity & parameters</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sessionStorage.removeItem('open_profile_setup_on_discovery');
+                      setShowProfileModal(false);
+                    }}
+                    className="p-1.5 rounded-xl hover:bg-white/20 text-white transition cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSaveProfile} className="p-6 space-y-4 text-xs">
+                  {profileSavedToast && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center space-x-2 font-semibold animate-bounce">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span>Preferences saved successfully! Welcome to Discovery.</span>
+                    </div>
+                  )}
+
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Full Name / Display Alias</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="e.g. Gyathri Gayatri, Dr. Rajesh Kumar"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 font-medium"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      placeholder="analyst@gmail.com"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 font-medium"
+                    />
+                  </div>
+
+                  {/* Organization */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Organization / Agency</label>
+                    <input
+                      type="text"
+                      value={profileOrg}
+                      onChange={(e) => setProfileOrg(e.target.value)}
+                      placeholder="e.g. ISRO, Reuters Bureau, National Research Lab"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 font-medium"
+                    />
+                  </div>
+
+                  {/* Role & Designation */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Role Type</label>
+                      <select
+                        value={profileRole}
+                        onChange={(e) => setProfileRole(e.target.value as UserRole)}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-orange-600 font-medium"
+                      >
+                        <option value="Analyst">Analyst</option>
+                        <option value="FactVerifier">Fact Verifier</option>
+                        <option value="Executive">Executive</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Client">Client</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Designation</label>
+                      <input
+                        type="text"
+                        value={profileDesignation}
+                        onChange={(e) => setProfileDesignation(e.target.value)}
+                        placeholder="e.g. Lead Analyst"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-orange-600 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sessionStorage.removeItem('open_profile_setup_on_discovery');
+                        setShowProfileModal(false);
+                      }}
+                      className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition font-semibold cursor-pointer"
+                    >
+                      Skip
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold transition shadow-sm cursor-pointer"
+                    >
+                      Save Preferences
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Multi-Agent Full Analysis Inspector Modal */}
         {inspectingTurn && (
@@ -1168,3 +1367,4 @@ export const DiscoveryChatView: React.FC<DiscoveryChatViewProps> = ({
 };
 
 export default DiscoveryChatView;
+

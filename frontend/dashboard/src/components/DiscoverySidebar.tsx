@@ -70,11 +70,11 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full transition-all duration-300 select-none flex-shrink-0 z-30 shadow-xs">
+    <aside className="w-64 bg-[#fffaf5] border-r border-orange-200/80 flex flex-col h-full transition-all duration-300 select-none flex-shrink-0 z-30 shadow-xs">
       {/* Header */}
-      <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
+      <div className="p-3.5 border-b border-orange-200/80 flex items-center justify-between bg-orange-50/50">
         <div className="flex items-center space-x-2">
-          <Compass className="w-5 h-5 text-indigo-600" />
+          <Compass className="w-5 h-5 text-orange-600" />
           <span className="text-base font-bold text-slate-900 tracking-tight">
             Discovery
           </span>
@@ -83,14 +83,14 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
         <div className="flex items-center space-x-1 text-slate-500">
           <button
             onClick={() => setShowHistorySearch(!showHistorySearch)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-orange-100/70 hover:text-orange-700 transition cursor-pointer"
             title="Filter search history"
           >
             <Search className="w-4 h-4" />
           </button>
           <button
             onClick={() => onToggleSidebar(false)}
-            className="flex items-center space-x-1 p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            className="flex items-center space-x-1 p-1.5 rounded-lg hover:bg-orange-100/70 text-slate-500 hover:text-orange-700 transition cursor-pointer"
             title="Close Menu"
           >
             <PanelLeftClose className="w-4 h-4" />
@@ -100,14 +100,14 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
 
       {/* History Search Filter Bar */}
       {showHistorySearch && (
-        <div className="px-3 pt-2.5 pb-1">
+        <div className="px-3 pt-2.5 pb-1 bg-orange-50/30">
           <div className="relative">
             <input
               type="text"
               value={historySearchQuery}
               onChange={(e) => setHistorySearchQuery(e.target.value)}
               placeholder="Filter search history..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600"
+              className="w-full bg-white border border-orange-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600"
             />
             {historySearchQuery && (
               <button
@@ -125,13 +125,13 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
       <div className="p-3 pb-2 space-y-2">
         <button
           onClick={onNewInquiry}
-          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition group shadow-sm cursor-pointer"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold transition group shadow-sm cursor-pointer"
         >
           <div className="flex items-center space-x-2.5">
-            <Plus className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+            <Plus className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             <span>New Inquiry</span>
           </div>
-          <span className="text-[10px] bg-indigo-200/60 text-indigo-800 px-1.5 py-0.5 rounded font-medium">⌘N</span>
+          <span className="text-[10px] bg-orange-700/60 text-white px-1.5 py-0.5 rounded font-medium">⌘N</span>
         </button>
 
         {/* Set Your Rules */}
@@ -139,22 +139,22 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
           onClick={onOpenRules}
           className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition group shadow-xs cursor-pointer ${
             currentView === 'rules'
-              ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-300 shadow-xs'
-              : 'bg-white hover:bg-indigo-50/70 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200'
+              ? 'bg-orange-100 text-orange-800 font-bold border border-orange-300 shadow-xs'
+              : 'bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-orange-200/80 hover:border-orange-300'
           }`}
           title="Set your custom search rules and filters"
         >
           <div className="flex items-center space-x-2">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition-transform" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600 group-hover:scale-110 transition-transform" />
             <span>Set Your Rules</span>
           </div>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-transform" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-600 transition-transform" />
         </button>
       </div>
 
       {/* Search History Section */}
       <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
-        <div className="px-3 pt-1 pb-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+        <div className="px-3 pt-1 pb-1.5 text-[11px] font-bold text-orange-400 uppercase tracking-wider">
           Search History
         </div>
 
@@ -176,13 +176,13 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
                 onClick={() => onSelectSession(sess)}
                 className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm border border-indigo-200'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-orange-100/90 text-orange-900 font-semibold shadow-xs border border-orange-300'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-orange-50/80'
                 }`}
                 title={sess.title}
               >
                 <div className="flex items-center space-x-2.5 truncate flex-1 pr-1">
-                  <Search className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                  <Search className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-orange-600' : 'text-slate-400 group-hover:text-orange-600'}`} />
                   <span className="truncate">{sess.title}</span>
                 </div>
                 <button
@@ -199,17 +199,17 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
       </div>
 
       {/* Pinned Bottom Bar: Settings & Clear History */}
-      <div className="p-2 border-t border-slate-200 bg-slate-50/60 space-y-1 mt-auto">
+      <div className="p-2 border-t border-orange-200/80 bg-orange-50/60 space-y-1 mt-auto">
         <button
           onClick={onOpenSettings}
           className={`w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition group cursor-pointer ${
             currentView === 'settings'
-              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold'
-              : 'text-slate-700 hover:text-indigo-700 hover:bg-indigo-50/60 border border-transparent hover:border-indigo-100'
+              ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
+              : 'text-slate-700 hover:text-orange-700 hover:bg-orange-100/60 border border-transparent hover:border-orange-200'
           }`}
           title="System Settings & API Configuration"
         >
-          <Settings className={`w-4 h-4 transition-colors ${currentView === 'settings' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-600'}`} />
+          <Settings className={`w-4 h-4 transition-colors ${currentView === 'settings' ? 'text-orange-600' : 'text-slate-500 group-hover:text-orange-600'}`} />
           <span>Settings</span>
         </button>
 
@@ -225,3 +225,4 @@ export const DiscoverySidebar: React.FC<DiscoverySidebarProps> = ({
     </aside>
   );
 };
+

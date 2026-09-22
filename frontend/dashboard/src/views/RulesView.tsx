@@ -49,24 +49,24 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
           {!isSidebarOpen && onToggleSidebar && (
             <button
               onClick={() => onToggleSidebar(true)}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition shadow-xs cursor-pointer"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-orange-50 border border-orange-200 text-slate-700 transition shadow-xs cursor-pointer"
               title="Open Menu"
             >
-              <Menu className="w-4 h-4 text-indigo-600" />
+              <Menu className="w-4 h-4 text-orange-600" />
               <span className="text-xs font-semibold">Open Menu</span>
             </button>
           )}
           {onBack && (
             <button
               onClick={onBack}
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-orange-600 transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Discovery Search</span>
             </button>
           )}
         </div>
-        <div className="flex items-center space-x-2 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
+        <div className="flex items-center space-x-2 text-orange-600 text-xs font-bold uppercase tracking-wider mb-1">
           <SlidersHorizontal className="w-4 h-4" />
           <span>Configurable Rule Engine & Sandbox</span>
         </div>
@@ -80,7 +80,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
       <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <Sparkles className="w-4 h-4 text-orange-600" />
             <span>Natural Language Rule Authoring (LLM Compiler)</span>
           </h2>
           <span className="text-xs text-slate-500 font-medium">Gemini Structured Parser</span>
@@ -92,12 +92,12 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
             value={nlPrompt}
             onChange={(e) => setNlPrompt(e.target.value)}
             placeholder="e.g. Only Tier 1 Indian news from last 24h excluding cricket and stock prices"
-            className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm font-medium"
+            className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm font-medium"
           />
           <button
             onClick={handleCompileNL}
             disabled={isCompiling}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-5 rounded-xl flex items-center space-x-2 transition disabled:opacity-50 shadow-sm cursor-pointer"
+            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-5 rounded-xl flex items-center space-x-2 transition disabled:opacity-50 shadow-sm cursor-pointer"
           >
             {isCompiling ? <span>Compiling...</span> : <span>Compile to Rule JSON</span>}
           </button>
@@ -116,7 +116,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
               <select
                 value={minTier}
                 onChange={(e) => setMinTier(Number(e.target.value))}
-                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               >
                 <option value={1}>Tier 1 (Authoritative Wire & Official Only)</option>
                 <option value={2}>Tier 2 (Commercial & Mainstream Journalism)</option>
@@ -129,7 +129,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
               <select
                 value={recencyWindow}
                 onChange={(e) => setRecencyWindow(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               >
                 <option value="24h">Last 24 Hours</option>
                 <option value="48h">Last 48 Hours</option>
@@ -145,7 +145,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
                 value={excludedTerms}
                 onChange={(e) => setExcludedTerms(e.target.value)}
                 placeholder="sports, movie reviews, weather"
-                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm font-medium"
+                className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm font-medium"
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
             <button
               onClick={handleRunSandbox}
               disabled={isRunningSandbox}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
             >
               <Play className="w-4 h-4" />
               <span>{isRunningSandbox ? 'Evaluating Historical Data...' : 'Run Historical Sandbox Test'}</span>
@@ -165,7 +165,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ onBack, isSidebarOpen = tr
         {/* Sandbox Outcome Simulation Card */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-            <BarChart2 className="w-4 h-4 text-indigo-600" />
+            <BarChart2 className="w-4 h-4 text-orange-600" />
             <span>Sandbox Simulation</span>
           </h2>
 

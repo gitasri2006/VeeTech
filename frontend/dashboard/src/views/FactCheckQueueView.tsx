@@ -124,7 +124,7 @@ export const FactCheckQueueView: React.FC = () => {
                         <span className="font-bold text-slate-900 block">{ev.source}</span>
                         <p className="text-slate-600 font-medium">{ev.summary}</p>
                       </div>
-                      <a href={ev.url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-800 p-1 font-semibold">
+                      <a href={ev.url} target="_blank" rel="noreferrer" className="text-orange-600 hover:text-orange-800 p-1 font-semibold">
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
@@ -135,7 +135,7 @@ export const FactCheckQueueView: React.FC = () => {
               {/* Analyst Sign-Off Form */}
               <div className="pt-4 border-t border-slate-100 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
+                  <UserCheck className="w-4 h-4 text-orange-600" />
                   <span>Analyst Audit & Human Sign-Off (TRD 5.7)</span>
                 </h3>
 
@@ -145,7 +145,7 @@ export const FactCheckQueueView: React.FC = () => {
                     <select
                       value={overrideVerdict}
                       onChange={(e) => setOverrideVerdict(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
                     >
                       <option value="Likely False">Confirm Likely False / Debunk</option>
                       <option value="Disputed">Confirm Disputed Claims</option>
@@ -169,7 +169,7 @@ export const FactCheckQueueView: React.FC = () => {
                       rows={2}
                       value={analystReason}
                       onChange={(e) => setAnalystReason(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm font-medium"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm font-medium"
                     />
                   </div>
                 </div>
@@ -178,7 +178,7 @@ export const FactCheckQueueView: React.FC = () => {
                   <button
                     onClick={handleSignOff}
                     disabled={isSubmitting}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
                   >
                     <Shield className="w-4 h-4" />
                     <span>{isSubmitting ? 'Signing Off...' : 'Complete Sign-Off & Publish'}</span>

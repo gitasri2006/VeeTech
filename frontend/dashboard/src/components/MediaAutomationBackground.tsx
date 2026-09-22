@@ -87,12 +87,12 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
       canvas.parentElement.addEventListener('mouseleave', handleMouseLeave);
     }
 
-    // Professional clean slate & indigo palette for white theme
+    // Pure Vibrant Orange & Warm Amber palette for clean white theme
     const colors = [
-      'rgba(99, 102, 241, ',  // indigo-500
-      'rgba(79, 70, 229, ',   // indigo-600
-      'rgba(14, 165, 233, ',  // sky-500
-      'rgba(100, 116, 139, ', // slate-500
+      'rgba(234, 88, 12, ',  // orange-600
+      'rgba(249, 115, 22, ', // orange-500
+      'rgba(251, 146, 60, ', // orange-400
+      'rgba(245, 158, 11, ', // amber-500
     ];
 
     let particles: Particle[] = [];
@@ -184,7 +184,7 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           p1.y -= (mdy / mdist) * force;
         }
 
-        // Draw connections to nearby nodes (subtle gray/indigo lines)
+        // Draw connections to nearby nodes (subtle warm orange lines)
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p1.x - p2.x;
@@ -192,11 +192,11 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < maxConnectionDistance) {
-            const alpha = (1 - dist / maxConnectionDistance) * 0.22;
+            const alpha = (1 - dist / maxConnectionDistance) * 0.25;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(148, 163, 184, ${alpha})`;
+            ctx.strokeStyle = `rgba(251, 146, 60, ${alpha})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
@@ -204,11 +204,11 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
 
         // Connection to mouse
         if (mdist < mouse.radius) {
-          const mouseAlpha = (1 - mdist / mouse.radius) * 0.35;
+          const mouseAlpha = (1 - mdist / mouse.radius) * 0.45;
           ctx.beginPath();
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(99, 102, 241, ${mouseAlpha})`;
+          ctx.strokeStyle = `rgba(234, 88, 12, ${mouseAlpha})`;
           ctx.lineWidth = 1.0;
           ctx.stroke();
         }
@@ -231,11 +231,11 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         const curX = pFrom.x + (pTo.x - pFrom.x) * pkt.progress;
         const curY = pFrom.y + (pTo.y - pFrom.y) * pkt.progress;
 
-        // Clean solid crisp dot
+        // Clean solid crisp orange dot
         ctx.beginPath();
-        ctx.arc(curX, curY, 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = '#4f46e5'; // indigo-600
-        ctx.shadowBlur = 0; // Strictly no glow
+        ctx.arc(curX, curY, 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ea580c'; // orange-600
+        ctx.shadowBlur = 0;
         ctx.fill();
       }
 
@@ -246,19 +246,19 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
         // Draw node
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.isHub ? '#4f46e5' : `${p.color}0.65)`;
-        ctx.shadowBlur = 0; // Strictly no glow
+        ctx.fillStyle = p.isHub ? '#ea580c' : `${p.color}0.75)`;
+        ctx.shadowBlur = 0;
         ctx.fill();
 
         // Hub nodes subtle pulse rings
         if (p.isHub) {
           p.pulsePhase = ((p.pulsePhase || 0) + 0.02) % (Math.PI * 2);
           const ringRadius = p.radius + 5 + Math.sin(p.pulsePhase) * 4;
-          const ringAlpha = 0.25 * (1 - Math.sin(p.pulsePhase) * 0.5);
+          const ringAlpha = 0.3 * (1 - Math.sin(p.pulsePhase) * 0.5);
 
           ctx.beginPath();
           ctx.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(79, 70, 229, ${ringAlpha})`;
+          ctx.strokeStyle = `rgba(234, 88, 12, ${ringAlpha})`;
           ctx.lineWidth = 1.0;
           ctx.stroke();
         }
@@ -271,7 +271,7 @@ export const MediaAutomationBackground: React.FC<MediaAutomationBackgroundProps>
           const item = labelPositions[l];
           const node = particles[item.nodeIdx % particles.length];
           if (node) {
-            ctx.fillStyle = 'rgba(100, 116, 139, 0.6)';
+            ctx.fillStyle = 'rgba(234, 88, 12, 0.65)';
             ctx.fillText(`[${item.text}]`, node.x + 8, node.y - 6);
           }
         }

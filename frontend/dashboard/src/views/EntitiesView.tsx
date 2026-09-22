@@ -53,7 +53,7 @@ export const EntitiesView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-orange-600 text-xs font-bold uppercase tracking-wider mb-1">
             <Building2 className="w-4 h-4" />
             <span>Entity Profiles & Disambiguation</span>
           </div>
@@ -65,7 +65,7 @@ export const EntitiesView: React.FC = () => {
 
         <button
           onClick={() => setShowModal(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center space-x-2 transition shadow-sm cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Onboard Tracked Entity</span>
@@ -77,7 +77,7 @@ export const EntitiesView: React.FC = () => {
         {entities.map((entity) => (
           <div
             key={entity.id}
-            className="bg-white border border-slate-200 rounded-2xl p-6 hover:border-indigo-300 transition shadow-sm hover:shadow-md space-y-4"
+            className="bg-white border border-slate-200 rounded-2xl p-6 hover:border-orange-300 transition shadow-sm hover:shadow-md space-y-4"
           >
             {/* Top Bar */}
             <div className="flex items-center justify-between">
@@ -117,7 +117,7 @@ export const EntitiesView: React.FC = () => {
               <span className="text-xs font-bold text-slate-500 block mb-1.5">Seed Expansion Terms</span>
               <div className="flex flex-wrap gap-1.5">
                 {entity.seed_terms.map((st, idx) => (
-                  <span key={idx} className="px-2.5 py-1 rounded-md text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 font-medium">
+                  <span key={idx} className="px-2.5 py-1 rounded-md text-xs bg-orange-50 border border-orange-200 text-orange-700 font-medium">
                     {st}
                   </span>
                 ))}
@@ -151,7 +151,7 @@ export const EntitiesView: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Tata Motors"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
                 />
               </div>
 
@@ -160,7 +160,7 @@ export const EntitiesView: React.FC = () => {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
                 >
                   <option value="Company">Company / Enterprise</option>
                   <option value="Person">Public Figure / Executive</option>
@@ -176,7 +176,7 @@ export const EntitiesView: React.FC = () => {
                   value={aliases}
                   onChange={(e) => setAliases(e.target.value)}
                   placeholder="Tata Motors Ltd, Tata Motors EV, TaMo"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
                 />
               </div>
 
@@ -187,7 +187,7 @@ export const EntitiesView: React.FC = () => {
                   value={seedTerms}
                   onChange={(e) => setSeedTerms(e.target.value)}
                   placeholder="commercial vehicle, electric bus, battery pack"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
                 />
               </div>
 
@@ -198,7 +198,7 @@ export const EntitiesView: React.FC = () => {
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
                   placeholder="Explain how to differentiate this entity from homonyms or unrelated subsidiaries..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
                 />
               </div>
 
@@ -213,7 +213,7 @@ export const EntitiesView: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold shadow-sm cursor-pointer"
                 >
                   {isSubmitting ? 'Onboarding...' : 'Save Entity Profile'}
                 </button>

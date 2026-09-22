@@ -16,7 +16,7 @@ export const AdminUsersView: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
             <Users className="w-4 h-4" />
             <span>Admin Console & Governance</span>
           </div>
@@ -26,7 +26,7 @@ export const AdminUsersView: React.FC = () => {
           </p>
         </div>
 
-        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-sm">
+        <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-sm">
           <UserPlus className="w-4 h-4" />
           <span>Invite Team Member</span>
         </button>
@@ -52,7 +52,7 @@ export const AdminUsersView: React.FC = () => {
                   <div className="text-slate-500 font-mono text-[11px]">{u.email}</div>
                 </td>
                 <td className="py-4 px-6">
-                  <span className="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <span className="px-2.5 py-1 rounded-full font-semibold text-[11px] bg-orange-50 text-orange-700 border border-orange-200">
                     {u.role}
                   </span>
                 </td>
@@ -66,7 +66,7 @@ export const AdminUsersView: React.FC = () => {
                   </span>
                 </td>
                 <td className="py-4 px-6 text-right">
-                  <button className="text-indigo-600 hover:text-indigo-800 font-medium">Edit Permissions</button>
+                  <button className="text-orange-600 hover:text-orange-800 font-medium">Edit Permissions</button>
                 </td>
               </tr>
             ))}

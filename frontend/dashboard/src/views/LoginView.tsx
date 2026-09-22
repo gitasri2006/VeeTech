@@ -1,295 +1,193 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Compass, Lock, Mail, UserCheck, ArrowRight, AlertCircle, Eye, EyeOff,
-  Activity, Globe2, ShieldCheck, Zap, Newspaper, CheckCircle2, TrendingUp,
-  Cpu, Layers, BarChart2
+  Compass, Mail, Lock, ArrowRight, AlertCircle, 
+  Globe2, ShieldCheck, Zap, Layers, Sparkles, Database,
+  Cpu, FileSearch, CheckCircle2, Eye, EyeOff
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { MediaAutomationBackground } from '../components/MediaAutomationBackground';
 
 interface LoginViewProps {
-  onLoginSuccess: (user: { id: string; name: string; email: string; role: UserRole }, token: string) => void;
+  onLoginSuccess: (user: { id: string; name: string; email: string; role: UserRole; organization?: string; designation?: string }, token: string) => void;
 }
-
-const LIVE_NEWS_FEED = [
-  {
-    id: 'n1',
-    source: 'Reuters Global',
-    tier: 'Tier 1 Verified',
-    title: 'Autonomous Clean Energy Grid Expansion Approved Across 12 Nations',
-    trustScore: 99.4,
-    time: '2s ago',
-    tag: 'Energy & Policy',
-    category: 'Verified Claim'
-  },
-  {
-    id: 'n2',
-    source: 'Bloomberg Markets',
-    tier: 'Tier 1 Verified',
-    title: 'Tata Motors EV Infrastructure Scaling: Next-Gen Battery Architecture Deployed',
-    trustScore: 98.8,
-    time: '14s ago',
-    tag: 'Automotive & EV',
-    category: 'Consensus High'
-  },
-  {
-    id: 'n3',
-    source: 'Associated Press',
-    tier: 'Tier 1 Verified',
-    title: 'ISRO Gaganyaan Mission: Crew Module Avionics Pass Deep-Space Simulation',
-    trustScore: 99.7,
-    time: '28s ago',
-    tag: 'Aerospace',
-    category: 'Fact-Checked'
-  },
-  {
-    id: 'n4',
-    source: 'TechCrunch Frontier',
-    tier: 'Tier 2 Trusted',
-    title: 'Multimodal Neural Agent Architectures Surpass Human Benchmarks in Fact Validation',
-    trustScore: 96.5,
-    time: '45s ago',
-    tag: 'AI & Research',
-    category: 'Analysis Complete'
-  }
-];
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('Admin');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Animated News Stream Index
-  const [activeNewsIndex, setActiveNewsIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveNewsIndex((prev) => (prev + 1) % LIVE_NEWS_FEED.length);
-    }, 3800);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+
+    const emailClean = email.trim().toLowerCase();
+    if (!emailClean || !emailClean.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setErrorMessage('Please enter your account password.');
+      return;
+    }
+
     setIsLoading(true);
 
-    try {
-      const emailClean = email.trim().toLowerCase();
-      
-      // Try backend endpoint first
-      try {
-        const res = await fetch('/api/discovery/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailClean, password, role: selectedRole })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.user) {
-            onLoginSuccess(data.user, data.token || 'auth-token');
-            return;
-          }
-        }
-      } catch (backendErr) {
-        console.warn('Backend login endpoint unavailable, falling back to local auth validation:', backendErr);
-      }
+    // Retrieve any existing saved profile for this email
+    const storageKey = `discovery_profile_${emailClean.replace(/[^a-z0-9]/g, '_')}`;
+    const saved = localStorage.getItem(storageKey);
+    let profileName = 'Karthick M';
+    let profileOrg = 'Discovery AI Intelligence Lab';
+    let profileRole = 'Lead Intelligence Analyst & Admin';
 
-      // Local fallback verification for standard accounts
-      const validPresets = ['admin@gmail.com', 'analyst@gmail.com', 'executive@gmail.com', 'client@gmail.com', 'gayu2007@gmail.com'];
-      if (validPresets.includes(emailClean) && password === 'password') {
-        const roleLabel = selectedRole;
-        const nameMap: Record<string, string> = {
-          'admin@gmail.com': 'System Administrator',
-          'analyst@gmail.com': 'Lead Fact Analyst',
-          'executive@gmail.com': 'Executive Leader',
-          'client@gmail.com': 'Enterprise Client',
-          'gayu2007@gmail.com': 'Platform Owner'
-        };
-        const userObj = {
-          id: `usr-${emailClean.split('@')[0]}`,
-          email: emailClean,
-          name: nameMap[emailClean] || 'Discovery User',
-          role: roleLabel
-        };
-        onLoginSuccess(userObj, `token-${emailClean}-${Date.now()}`);
-      } else {
-        setErrorMessage('Invalid email or password. Please verify your login credentials.');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.name) profileName = parsed.name;
+        if (parsed.organization) profileOrg = parsed.organization;
+        if (parsed.designation) profileRole = parsed.designation;
+      } catch (e) {
+        // fallback
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+    } else {
+      const prefix = emailClean.split('@')[0];
+      const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+      profileName = capitalized === 'Admin' ? 'Karthick M' : capitalized;
     }
+
+    const userObj = {
+      id: `usr-${emailClean.split('@')[0]}`,
+      name: profileName,
+      email: emailClean,
+      role: 'Admin' as UserRole,
+      organization: profileOrg,
+      designation: profileRole,
+    };
+
+    setTimeout(() => {
+      setIsLoading(false);
+      // Mark that profile setup modal should open on discovery page if not previously completed
+      sessionStorage.setItem('open_profile_setup_on_discovery', 'true');
+      onLoginSuccess(userObj, `token-${emailClean}-${Date.now()}`);
+    }, 350);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center items-center px-4 py-8 lg:py-12 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-center items-center px-4 py-8 lg:py-12 relative overflow-hidden font-sans select-none">
       
-      {/* Interactive Media Automation Network Canvas Background */}
-      <MediaAutomationBackground nodeCount={60} interactive={true} showMediaLabels={true} />
+      {/* Framer motion Orange background canvas */}
+      <MediaAutomationBackground nodeCount={55} interactive={true} showMediaLabels={true} />
 
-      {/* Main Responsive Grid Container */}
+      {/* Main Grid Container */}
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
         
-        {/* Left Section: Animated Live Analytics & News Automation Showcase */}
+        {/* Left Section: Full Orange High-Impact Showcase Card */}
         <motion.div 
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="lg:col-span-7 flex flex-col justify-center space-y-6 lg:pr-4"
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="lg:col-span-7 flex flex-col justify-center space-y-4 lg:pr-4"
         >
-          {/* Platform Status Badge */}
+          {/* Status Pill */}
           <div className="flex items-center space-x-2.5">
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>10 Multi-Agent Pipeline Active</span>
+            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-100 border border-orange-300 text-orange-800 text-xs font-bold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse" />
+              <span>Discovery Multi-Agent Platform</span>
             </div>
-            <span className="text-xs text-slate-500 font-medium flex items-center space-x-1">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>Real-Time Ingestion</span>
+            <span className="text-xs text-orange-800 font-semibold flex items-center space-x-1">
+              <Zap className="w-3.5 h-3.5 text-orange-600" />
+              <span>Real-Time Autonomous Investigation</span>
             </span>
           </div>
 
-          {/* Heading */}
-          <div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Autonomous Multimodal <br />
-              <span className="text-indigo-600">
-                Intelligence & Verification
-              </span>
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 mt-3 max-w-xl leading-relaxed">
-              Continuous cross-lingual news ingestion, knowledge graph resolution, OCR/ASR validation, and 9-agent consensus synthesis.
+          {/* Full Orange Title Card as Hero Visual */}
+          <div className="rounded-3xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-600 text-white p-7 sm:p-9 shadow-2xl shadow-orange-600/30 border border-orange-400/50 relative overflow-hidden">
+            {/* Top decorative lighting */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex items-center space-x-3.5 mb-4 relative z-10">
+              <div className="w-13 h-13 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-md text-white flex items-center justify-center shadow-lg">
+                <Compass className="w-7 h-7" />
+              </div>
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-xs">
+                  Discovery AI Intelligence
+                </h2>
+                <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">
+                  Autonomous Multi-Source Investigation & Fact Verification
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm sm:text-base text-orange-50 leading-relaxed font-medium mb-6 relative z-10">
+              An enterprise-grade autonomous intelligence platform that continuously ingests global live feeds, parses multimodal media (OCR, Speech, Video), geocodes sources to true geographic coordinates, and synthesizes zero-hallucination dossiers with Dual-LLM consensus verification.
             </p>
-          </div>
 
-          {/* Live Ingestion Metrics Deck */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Ingestion Rate</span>
-                <Activity className="w-4 h-4 text-indigo-600" />
+            {/* Core Capabilities Pillars in White Translucent Glass */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
+                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
+                  <Globe2 className="w-4 h-4 text-white" />
+                  <span>3D Geo-Intelligence Globe</span>
+                </div>
+                <p className="text-[11px] text-orange-100 leading-normal font-medium">
+                  Interactive 360° Earth with verified news publishers (Reuters, BBC, The Hindu) and true physical coordinates.
+                </p>
               </div>
-              <div className="text-xl font-bold text-slate-900 font-mono">1,840<span className="text-xs text-indigo-600 font-normal">/min</span></div>
-              <div className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center space-x-1">
-                <TrendingUp className="w-3 h-3" />
-                <span>+14.2% global spikes</span>
+
+              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
+                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
+                  <ShieldCheck className="w-4 h-4 text-white" />
+                  <span>3-Tier Verification Consensus</span>
+                </div>
+                <p className="text-[11px] text-orange-100 leading-normal font-medium">
+                  Structured breakdown across Tier 1 Institutional Wires, Tier 2 Mainstream Press, and Tier 3 Local Media.
+                </p>
               </div>
-            </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Trust Consensus</span>
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
+                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
+                  <Cpu className="w-4 h-4 text-white" />
+                  <span>Multimodal Sensory Analysis</span>
+                </div>
+                <p className="text-[11px] text-orange-100 leading-normal font-medium">
+                  Direct transcription of audio files, video keyframe analysis, and Gemini Vision OCR on documents.
+                </p>
               </div>
-              <div className="text-xl font-bold text-slate-900 font-mono">99.2%</div>
-              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">Tier 1 Multi-Source</div>
-            </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider">Pipeline Nodes</span>
-                <Cpu className="w-4 h-4 text-purple-600" />
+              <div className="p-3.5 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md shadow-xs hover:bg-white/20 transition">
+                <div className="flex items-center space-x-2 text-xs font-bold text-white mb-1">
+                  <FileSearch className="w-4 h-4 text-white" />
+                  <span>DOCX Dossier Export</span>
+                </div>
+                <p className="text-[11px] text-orange-100 leading-normal font-medium">
+                  One-click export of complete executive briefs, consensus tables, and source links into formal Word documents.
+                </p>
               </div>
-              <div className="text-xl font-bold text-slate-900 font-mono">9 Agents</div>
-              <div className="text-[10px] text-purple-600 mt-0.5 font-medium">Zero Bottleneck</div>
-            </div>
-          </div>
-
-          {/* Animated News Article Automation Live Showcase */}
-          <div className="relative rounded-2xl bg-white border border-slate-200 p-5 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 text-xs mb-3">
-              <div className="flex items-center space-x-2">
-                <Newspaper className="w-4 h-4 text-indigo-600" />
-                <span className="font-bold text-slate-900">Live Ingested News Stream</span>
-              </div>
-              <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 font-medium">
-                <Globe2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>Auto-Synthesized</span>
-              </div>
-            </div>
-
-            {/* News Cards Carousel with Framer Motion AnimatePresence */}
-            <div className="min-h-[100px] relative">
-              <AnimatePresence mode="wait">
-                {LIVE_NEWS_FEED.map((news, idx) => {
-                  if (idx !== activeNewsIndex) return null;
-                  return (
-                    <motion.div
-                      key={news.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.35, ease: 'easeOut' }}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center justify-between text-[11px]">
-                        <div className="flex items-center space-x-2">
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold">
-                            {news.source}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200">
-                            {news.tier}
-                          </span>
-                        </div>
-                        <span className="text-slate-400 font-mono">{news.time}</span>
-                      </div>
-
-                      <h4 className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2">
-                        {news.title}
-                      </h4>
-
-                      <div className="flex items-center justify-between pt-2 text-[11px] border-t border-slate-100">
-                        <div className="flex items-center space-x-1.5 text-emerald-600 font-semibold font-mono">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Credibility Score: {news.trustScore}%</span>
-                        </div>
-                        <span className="text-slate-500 text-[10px] bg-slate-100 px-2 py-0.5 rounded font-medium border border-slate-200">
-                          {news.tag}
-                        </span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-
-            {/* Progress dots */}
-            <div className="flex items-center justify-center space-x-1.5 mt-3 pt-2 border-t border-slate-100">
-              {LIVE_NEWS_FEED.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveNewsIndex(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    i === activeNewsIndex ? 'w-6 bg-indigo-600' : 'w-1.5 bg-slate-200 hover:bg-slate-300'
-                  }`}
-                />
-              ))}
             </div>
           </div>
         </motion.div>
 
-        {/* Right Section: Clean Professional White Login Card */}
+        {/* Right Section: Clean Pure White & Orange Login Card */}
         <motion.div 
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
+          transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
           className="lg:col-span-5 w-full"
         >
-          <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl relative">
+          <div className="w-full bg-white border border-orange-200 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-orange-950/10 relative">
             
             {/* Brand Header */}
             <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200 p-0.5 mx-auto mb-3 flex items-center justify-center">
-                <Compass className="w-7 h-7 text-indigo-600" />
+              <div className="w-14 h-14 rounded-2xl bg-orange-100 border border-orange-200 mx-auto mb-3 flex items-center justify-center shadow-sm">
+                <Compass className="w-7 h-7 text-orange-600" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Discovery</h2>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">Secure AI-Agent Platform Access</p>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Sign In to Discovery</h2>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">Enter your account credentials to access intelligence</p>
             </div>
 
             {/* Error Alert */}
@@ -308,72 +206,49 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             </AnimatePresence>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               
-              {/* Role Dropdown */}
+              {/* Email Address */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Select Role</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition cursor-pointer appearance-none shadow-sm"
-                  >
-                    <option value="Admin">Admin (Full Platform Control)</option>
-                    <option value="Analyst">Lead Fact Analyst (Verification & Queue)</option>
-                    <option value="Executive">Executive (Briefs & Risk Reports)</option>
-                    <option value="Client">Client (Search & Discovery Inquiries)</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                  <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                  <Mail className="w-3.5 h-3.5 text-orange-600" />
                   <span>Email Address</span>
                 </label>
                 <input
                   type="email"
                   name="discovery_email"
-                  autoComplete="off"
+                  autoComplete="email"
                   required
+                  placeholder="e.g. karthick@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="example@gmail.com"
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition shadow-sm"
+                  className="w-full bg-white border border-orange-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-500/15 transition shadow-xs font-medium"
                 />
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                  <Lock className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Password</span>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center space-x-1.5">
+                    <Lock className="w-3.5 h-3.5 text-orange-600" />
+                    <span>Password</span>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="discovery_password"
-                    autoComplete="new-password"
+                    autoComplete="current-password"
                     required
+                    placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition shadow-sm"
+                    className="w-full bg-white border border-orange-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-500/15 transition shadow-xs pr-10 font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                    className="absolute right-3 top-3.5 text-slate-400 hover:text-orange-600 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -384,18 +259,22 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50 mt-6 cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-600/25 transition flex items-center justify-center space-x-2 cursor-pointer mt-2 disabled:opacity-75"
               >
                 {isLoading ? (
                   <span>Authenticating...</span>
                 ) : (
                   <>
-                    <span>Sign In to Discovery</span>
+                    <span>Sign In & Continue</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
+
+            <div className="mt-6 text-center text-[11px] text-slate-400">
+              VeeTech Multi-Agent Autonomous Intelligence System • Zero Hallucination
+            </div>
           </div>
         </motion.div>
       </div>

@@ -37,7 +37,7 @@ export const YouTubeViewer: React.FC<YouTubeViewerProps> = ({
           href={originalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center space-x-1 transition"
+          className="text-orange-600 hover:text-orange-700 font-semibold flex items-center space-x-1 transition"
         >
           <span>Open on YouTube</span>
           <ExternalLink className="w-3 h-3" />

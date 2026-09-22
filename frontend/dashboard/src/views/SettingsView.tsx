@@ -41,24 +41,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {!isSidebarOpen && onToggleSidebar && (
               <button
                 onClick={() => onToggleSidebar(true)}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition shadow-xs cursor-pointer"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-orange-50 border border-orange-200 text-slate-700 transition shadow-xs cursor-pointer"
                 title="Open Menu"
               >
-                <Menu className="w-4 h-4 text-indigo-600" />
+                <Menu className="w-4 h-4 text-orange-600" />
                 <span className="text-xs font-semibold">Open Menu</span>
               </button>
             )}
             {onBack && (
               <button
                 onClick={onBack}
-                className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
+                className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-orange-600 transition"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Discovery Search</span>
               </button>
             )}
           </div>
-          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-orange-600 text-xs font-bold uppercase tracking-wider mb-1">
             <Settings className="w-4 h-4" />
             <span>Control Center & User Preferences</span>
           </div>
@@ -75,11 +75,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={() => setActiveTab('profile')}
           className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === 'profile'
-              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+              ? 'bg-orange-50 text-orange-800 border border-orange-300 shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <UserIcon className="w-4 h-4 text-indigo-600" />
+          <UserIcon className="w-4 h-4 text-orange-600" />
           <span>User Profile & Organization</span>
         </button>
 
@@ -87,11 +87,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={() => setActiveTab('system')}
           className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
             activeTab === 'system'
-              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+              ? 'bg-orange-50 text-orange-800 border border-orange-300 shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <Cpu className="w-4 h-4 text-indigo-600" />
+          <Cpu className="w-4 h-4 text-orange-600" />
           <span>AI Engines & Live Adapters</span>
         </button>
       </div>
@@ -100,7 +100,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {activeTab === 'profile' && (
         <div className="max-w-2xl bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
           <div className="flex items-center space-x-3 pb-4 border-b border-slate-200">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-lg">
+            <div className="w-12 h-12 rounded-xl bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700 font-bold text-lg">
               KM
             </div>
             <div>
@@ -116,7 +116,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               />
             </div>
 
@@ -126,7 +126,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="email"
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               />
             </div>
 
@@ -136,7 +136,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={userOrg}
                 onChange={(e) => setUserOrg(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               />
             </div>
 
@@ -146,14 +146,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={userRole}
                 onChange={(e) => setUserRole(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 shadow-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-600 shadow-sm"
               />
             </div>
 
             <div className="pt-4 flex items-center justify-between">
               <button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl transition shadow-sm cursor-pointer"
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl transition shadow-sm cursor-pointer"
               >
                 Save Preferences
               </button>
@@ -174,7 +174,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <Cpu className="w-4 h-4 text-indigo-600" />
+              <Cpu className="w-4 h-4 text-orange-600" />
               <span>Active AI Reasoning Engines</span>
             </h3>
             <div className="space-y-3 text-xs">
@@ -212,7 +212,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <Globe2 className="w-4 h-4 text-indigo-600" />
+              <Globe2 className="w-4 h-4 text-orange-600" />
               <span>Live Ingestion Adapters</span>
             </h3>
             <div className="space-y-3 text-xs">

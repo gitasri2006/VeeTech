@@ -217,7 +217,7 @@ export const MediaViewerView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
             <Layers className="w-4 h-4" />
             <span>Multimodal Media Extraction & Forensics</span>
           </div>
@@ -238,7 +238,7 @@ export const MediaViewerView: React.FC = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition transform active:scale-95 cursor-pointer"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg shadow-sm transition transform active:scale-95 cursor-pointer"
           >
             <Upload className="w-4 h-4" />
             <span>Upload Image / Video / Audio</span>
@@ -249,21 +249,21 @@ export const MediaViewerView: React.FC = () => {
       {/* Quick Test Preset Chips */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <span className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+          <Sparkles className="w-3.5 h-3.5 text-orange-600" />
           <span>Quick Demo Samples:</span>
         </span>
         <button
           onClick={() => loadPreset('image')}
           className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-md border border-slate-200 flex items-center space-x-1.5 transition"
         >
-          <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+          <ImageIcon className="w-3.5 h-3.5 text-orange-600" />
           <span>Sample EV Image</span>
         </button>
         <button
           onClick={() => loadPreset('video')}
           className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-md border border-slate-200 flex items-center space-x-1.5 transition"
         >
-          <VideoIcon className="w-3.5 h-3.5 text-blue-600" />
+          <VideoIcon className="w-3.5 h-3.5 text-orange-600" />
           <span>Sample Keynote Video</span>
         </button>
         <button
@@ -281,7 +281,7 @@ export const MediaViewerView: React.FC = () => {
           onClick={() => setActiveTab('image')}
           className={`flex items-center space-x-2 px-4 py-3 text-xs font-semibold border-b-2 transition ${
             activeTab === 'image'
-              ? 'border-indigo-600 text-indigo-600'
+              ? 'border-orange-600 text-orange-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -293,7 +293,7 @@ export const MediaViewerView: React.FC = () => {
           onClick={() => setActiveTab('video')}
           className={`flex items-center space-x-2 px-4 py-3 text-xs font-semibold border-b-2 transition ${
             activeTab === 'video'
-              ? 'border-indigo-600 text-indigo-600'
+              ? 'border-orange-600 text-orange-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -305,7 +305,7 @@ export const MediaViewerView: React.FC = () => {
           onClick={() => setActiveTab('audio')}
           className={`flex items-center space-x-2 px-4 py-3 text-xs font-semibold border-b-2 transition ${
             activeTab === 'audio'
-              ? 'border-indigo-600 text-indigo-600'
+              ? 'border-orange-600 text-orange-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -317,7 +317,7 @@ export const MediaViewerView: React.FC = () => {
       {/* Loading Spinner during analysis */}
       {isAnalyzing && (
         <div className="p-12 bg-white border border-slate-200 rounded-b-xl rounded-t-none flex flex-col items-center justify-center space-y-3 shadow-sm">
-          <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+          <RefreshCw className="w-8 h-8 text-orange-600 animate-spin" />
           <p className="text-sm font-semibold text-slate-900">Running Multimodal Neural Extraction...</p>
           <p className="text-xs text-slate-500">Processing OCR, Keyframes, Audio ASR, and Deepfake Forensics</p>
         </div>
@@ -327,9 +327,9 @@ export const MediaViewerView: React.FC = () => {
       {!isAnalyzing && !analysisResult && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="p-12 border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-white hover:bg-slate-50 rounded-b-xl rounded-t-none flex flex-col items-center justify-center space-y-4 cursor-pointer transition text-center shadow-sm"
+          className="p-12 border-2 border-dashed border-slate-300 hover:border-orange-500 bg-white hover:bg-slate-50 rounded-b-xl rounded-t-none flex flex-col items-center justify-center space-y-4 cursor-pointer transition text-center shadow-sm"
         >
-          <div className="w-16 h-16 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+          <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
             <Upload className="w-8 h-8" />
           </div>
           <div>
@@ -398,7 +398,7 @@ export const MediaViewerView: React.FC = () => {
               {/* Extraction Details */}
               <div className="space-y-6">
                 <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3 shadow-sm">
-                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-orange-600 uppercase tracking-wider flex items-center justify-between">
                     <span>Optical Character Recognition (OCR)</span>
                     <span className="text-[10px] text-slate-500">Tesseract Engine</span>
                   </h3>
@@ -408,7 +408,7 @@ export const MediaViewerView: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3 shadow-sm">
-                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-orange-600 uppercase tracking-wider flex items-center justify-between">
                     <span>Visual Scene Captioning</span>
                     <span className="text-[10px] text-slate-500">Gemini Vision Core</span>
                   </h3>
@@ -439,11 +439,11 @@ export const MediaViewerView: React.FC = () => {
 
               <div className="space-y-6">
                 <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3 shadow-sm">
-                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Keyframe Samplings & Scene OCR</h3>
+                  <h3 className="text-xs font-bold text-orange-600 uppercase tracking-wider">Keyframe Samplings & Scene OCR</h3>
                   <div className="space-y-2">
                     {analysisResult.videoKeyframes?.map((kf, i) => (
                       <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-                        <span className="font-mono text-indigo-600 font-bold">[{kf.timestamp}]</span>
+                        <span className="font-mono text-orange-600 font-bold">[{kf.timestamp}]</span>
                         <p className="text-slate-800 mt-1">{kf.caption}</p>
                         <p className="text-slate-500 text-[11px] font-mono mt-0.5">OCR: "{kf.ocr}"</p>
                       </div>
@@ -452,11 +452,11 @@ export const MediaViewerView: React.FC = () => {
                 </div>
 
                 <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3 shadow-sm">
-                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Audio Track Speech Transcript</h3>
+                  <h3 className="text-xs font-bold text-orange-600 uppercase tracking-wider">Audio Track Speech Transcript</h3>
                   <div className="space-y-2">
                     {analysisResult.audioTranscript?.map((t, i) => (
                       <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-                        <span className="font-mono text-slate-500">{t.time}</span> • <span className="font-bold text-indigo-700">{t.speaker}:</span>
+                        <span className="font-mono text-slate-500">{t.time}</span> • <span className="font-bold text-orange-700">{t.speaker}:</span>
                         <p className="text-slate-800 mt-1">{t.text}</p>
                       </div>
                     ))}
@@ -470,7 +470,7 @@ export const MediaViewerView: React.FC = () => {
           {activeTab === 'audio' && (
             <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-orange-600 uppercase tracking-wider">
                   Speech-to-Text Acoustic Transcription (ASR)
                 </h3>
                 {previewUrl && <audio controls src={previewUrl} className="h-10" />}
@@ -480,7 +480,7 @@ export const MediaViewerView: React.FC = () => {
                 {analysisResult.audioTranscript?.map((entry, idx) => (
                   <div key={idx} className="flex items-start space-x-4 p-4 bg-slate-50 rounded-lg border border-slate-200 text-xs">
                     <span className="font-mono text-slate-500 shrink-0">{entry.time}</span>
-                    <span className="font-bold text-indigo-700 shrink-0">{entry.speaker}:</span>
+                    <span className="font-bold text-orange-700 shrink-0">{entry.speaker}:</span>
                     <span className="text-slate-800 leading-relaxed">{entry.text}</span>
                   </div>
                 ))}

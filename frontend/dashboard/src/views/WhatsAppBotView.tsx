@@ -75,7 +75,7 @@ export const WhatsAppBotView: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       {/* Header */}
       <div>
-        <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
           <Smartphone className="w-4 h-4" />
           <span>Public Verification Bot</span>
         </div>
@@ -176,7 +176,7 @@ export const WhatsAppBotView: React.FC = () => {
                 type="text"
                 value={simPhone}
                 onChange={(e) => setSimPhone(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -186,7 +186,7 @@ export const WhatsAppBotView: React.FC = () => {
                 rows={3}
                 value={simText}
                 onChange={(e) => setSimText(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
               />
             </div>
 

@@ -34,7 +34,7 @@ export const ExecutiveBriefsView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
             <Sparkles className="w-4 h-4" />
             <span>Executive Briefs & Grounded Clustering</span>
           </div>
@@ -47,7 +47,7 @@ export const ExecutiveBriefsView: React.FC = () => {
         <button
           onClick={handleTriggerCycle}
           disabled={isGenerating}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-sm"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 transition shadow-sm"
         >
           <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
           <span>{isGenerating ? 'Synthesizing Digest...' : 'Run Scheduled Monitoring Cycle'}</span>
@@ -65,7 +65,7 @@ export const ExecutiveBriefsView: React.FC = () => {
               onClick={() => setSelectedBrief(brief)}
               className={`p-4 rounded-xl border cursor-pointer transition space-y-2 ${
                 selectedBrief?.id === brief.id
-                  ? 'bg-indigo-50/70 border-indigo-300 shadow-sm'
+                  ? 'bg-orange-50/70 border-orange-300 shadow-sm'
                   : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
               }`}
             >
@@ -87,7 +87,7 @@ export const ExecutiveBriefsView: React.FC = () => {
           <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <span className="text-[10px] font-bold text-indigo-600 uppercase">Executive Intelligence Brief</span>
+                <span className="text-[10px] font-bold text-orange-600 uppercase">Executive Intelligence Brief</span>
                 <h2 className="text-lg font-bold text-slate-900">{selectedBrief.title}</h2>
               </div>
               <div className="flex items-center space-x-2">
@@ -110,7 +110,7 @@ export const ExecutiveBriefsView: React.FC = () => {
                       "{sentence.text}"
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[11px]">
-                      <span className="text-indigo-600 font-mono flex items-center space-x-1">
+                      <span className="text-orange-600 font-mono flex items-center space-x-1">
                         <Link2 className="w-3 h-3" />
                         <span>Grounded Source: {sentence.article_id}</span>
                       </span>

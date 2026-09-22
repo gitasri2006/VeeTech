@@ -126,7 +126,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center space-x-2.5">
-            <Newspaper className="w-6 h-6 text-indigo-600" />
+            <Newspaper className="w-6 h-6 text-orange-600" />
             <span>Unified Real-Time Ingested Feed</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
@@ -141,7 +141,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
             placeholder="Search stories or keywords..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+            className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600 shadow-sm"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
               onClick={() => setSelectedVerdict(v)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
                 selectedVerdict === v
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-orange-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -175,7 +175,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
               onClick={() => setSelectedLanguage(lang)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase transition ${
                 selectedLanguage === lang
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-orange-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -191,14 +191,14 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
           <div
             key={story.id}
             onClick={() => onSelectStory(story.id)}
-            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition shadow-sm hover:shadow-md cursor-pointer space-y-3 group"
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-orange-300 transition shadow-sm hover:shadow-md cursor-pointer space-y-3 group"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center space-x-2.5 text-xs text-slate-500">
                   <span className="font-semibold text-slate-800">{story.source}</span>
                   <span>•</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
                     Tier {story.source_tier}
                   </span>
                   <span>•</span>
@@ -207,12 +207,12 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
                   <span>{story.published_at}</span>
                 </div>
 
-                <h3 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                <h3 className="text-base md:text-lg font-bold text-slate-900 group-hover:text-orange-600 transition">
                   {story.title}
                 </h3>
 
                 {story.translated_text && (
-                  <p className="text-xs text-indigo-700 bg-indigo-50 p-2 rounded-lg border border-indigo-100 font-medium">
+                  <p className="text-xs text-orange-700 bg-orange-50 p-2 rounded-lg border border-orange-100 font-medium">
                     <span className="font-bold">Translated:</span> {story.translated_text}
                   </p>
                 )}
@@ -224,7 +224,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onSelectStory }) => {
 
               <div className="flex flex-col items-end space-y-2 flex-shrink-0">
                 {getVerdictBadge(story.verdict, story.authenticity_score)}
-                <span className="text-[11px] text-indigo-600 font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
+                <span className="text-[11px] text-orange-600 font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
                   <span>View Evidence</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </span>

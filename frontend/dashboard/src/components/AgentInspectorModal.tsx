@@ -41,7 +41,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-sm">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
@@ -76,7 +76,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
             onClick={() => setActiveTab('agents')}
             className={`py-3 px-3 border-b-2 flex items-center space-x-1.5 transition ${
               activeTab === 'agents'
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-orange-600 text-orange-700'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -88,7 +88,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
             onClick={() => setActiveTab('evidence')}
             className={`py-3 px-3 border-b-2 flex items-center space-x-1.5 transition ${
               activeTab === 'evidence'
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-orange-600 text-orange-700'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -100,7 +100,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
             onClick={() => setActiveTab('sources')}
             className={`py-3 px-3 border-b-2 flex items-center space-x-1.5 transition ${
               activeTab === 'sources'
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-orange-600 text-orange-700'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -112,7 +112,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
             onClick={() => setActiveTab('trace')}
             className={`py-3 px-3 border-b-2 flex items-center space-x-1.5 transition ${
               activeTab === 'trace'
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-orange-600 text-orange-700'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -132,10 +132,10 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
               <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">1</div>
+                    <div className="w-6 h-6 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold">1</div>
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Multimodal Ingestion & Feature Extraction Agent</h3>
                   </div>
-                  <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold border border-blue-200">
+                  <span className="text-[11px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-semibold border border-orange-200">
                     Modality: {results.input_modality?.toUpperCase() || 'TEXT'}
                   </span>
                 </div>
@@ -153,10 +153,10 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
               <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">2</div>
+                    <div className="w-6 h-6 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold">2</div>
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Autonomous Investigation Planning Agent</h3>
                   </div>
-                  <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold border border-indigo-200">
+                  <span className="text-[11px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-semibold border border-orange-200">
                     LLMRouter Engine
                   </span>
                 </div>
@@ -328,7 +328,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
                           s.source_tier === 1
                             ? 'bg-purple-50 text-purple-700 border-purple-200'
                             : s.source_tier === 2
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
                             : 'bg-slate-50 text-slate-600 border-slate-200'
                         }`}>
                           Tier {s.source_tier || 2} ({Math.round((s.credibility_score ?? 0.8) * 100)}%)
@@ -343,7 +343,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1"
+                          className="text-[11px] font-semibold text-orange-600 hover:text-orange-800 flex items-center space-x-1"
                         >
                           <span>Visit Source</span>
                           <ExternalLink className="w-3 h-3" />
@@ -360,8 +360,8 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
           {activeTab === 'trace' && (
             <div className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl p-5 font-mono text-xs shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div className="flex items-center space-x-2 text-indigo-700 font-bold">
-                  <Terminal className="w-4 h-4 text-indigo-600" />
+                <div className="flex items-center space-x-2 text-orange-700 font-bold">
+                  <Terminal className="w-4 h-4 text-orange-600" />
                   <span>Execution Audit Trace</span>
                 </div>
                 <span className="text-[11px] text-slate-500 font-semibold">Trace ID: {trace.request_id || 'live-trace'}</span>
@@ -370,9 +370,9 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
               <div className="space-y-3">
                 {trace.steps && trace.steps.length > 0 ? (
                   trace.steps.map((st: any, i: number) => (
-                    <div key={i} className="border-l-2 border-indigo-600 pl-3 py-1 space-y-1 bg-white p-2.5 rounded-r-lg border border-slate-200">
+                    <div key={i} className="border-l-2 border-orange-600 pl-3 py-1 space-y-1 bg-white p-2.5 rounded-r-lg border border-slate-200">
                       <div className="flex items-center space-x-2">
-                        <span className="text-indigo-700 font-bold">[{st.agent || st.step}]</span>
+                        <span className="text-orange-700 font-bold">[{st.agent || st.step}]</span>
                         <span className="text-slate-500 text-[11px] font-medium">{st.action}</span>
                       </div>
                       <p className="text-slate-800 text-[11px] font-medium">{st.result}</p>
@@ -382,8 +382,8 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
                 ) : (
                   <div className="space-y-2 text-slate-700 bg-white p-3 rounded-lg border border-slate-200">
                     <p className="text-emerald-700 font-medium">✓ [MultimodalAgent] Analyzed media input and generated contextual entities.</p>
-                    <p className="text-indigo-700 font-medium">✓ [InvestigationPlanner] Formulated search hypotheses with zero-hallucination guardrails.</p>
-                    <p className="text-blue-700 font-medium">✓ [DiscoveryFanOut] Retrieved {sources.length} sources from live web, news wires, and registries.</p>
+                    <p className="text-orange-700 font-medium">✓ [InvestigationPlanner] Formulated search hypotheses with zero-hallucination guardrails.</p>
+                    <p className="text-orange-700 font-medium">✓ [DiscoveryFanOut] Retrieved {sources.length} sources from live web, news wires, and registries.</p>
                     <p className="text-purple-700 font-medium">✓ [FactVerificationAgent] Audited claims with Google FactCheck Tools API & Serper debunks.</p>
                     <p className="text-teal-700 font-medium">✓ [IntelligenceSynthesizer] Grounded final multi-source dossier in {results.target_language || 'en'}.</p>
                   </div>
@@ -399,7 +399,7 @@ export const AgentInspectorModal: React.FC<AgentInspectorModalProps> = ({ turn, 
           <span>Discovery Autonomous Intelligence Core • Zero-Hallucination Grounding</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold transition cursor-pointer shadow-sm"
           >
             Close Inspector
           </button>

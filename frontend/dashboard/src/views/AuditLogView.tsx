@@ -19,7 +19,7 @@ export const AuditLogView: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       {/* Header */}
       <div>
-        <div className="flex items-center space-x-2 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-1">
+        <div className="flex items-center space-x-2 text-orange-600 text-xs font-semibold uppercase tracking-wider mb-1">
           <History className="w-4 h-4" />
           <span>Governance & Compliance</span>
         </div>
@@ -35,7 +35,7 @@ export const AuditLogView: React.FC = () => {
           <div key={log.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
             <div className="flex flex-wrap items-center justify-between text-xs">
               <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="px-2 py-0.5 rounded font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
                   {log.action_type}
                 </span>
                 <span className="text-slate-600">Actor: <strong className="text-slate-900">{log.actor_id}</strong></span>

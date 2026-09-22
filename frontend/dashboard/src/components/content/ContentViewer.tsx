@@ -93,7 +93,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
       const isYt = url.includes('youtube.com') || url.includes('youtu.be');
       return (
         <div className="p-8 bg-white border border-slate-200 rounded-2xl flex flex-col items-center justify-center space-y-3 text-center my-2 shadow-sm">
-          <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
+          <RefreshCw className="w-6 h-6 text-orange-600 animate-spin" />
           <div>
             <h4 className="text-sm font-bold text-slate-800">
               {isYt ? 'Initializing YouTube Player...' : 'Extracting Clean Article Content...'}
@@ -193,7 +193,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center space-x-1.5 transition shadow-sm"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold text-xs flex items-center space-x-1.5 transition shadow-sm"
           >
             <span>Open Original Source</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -211,7 +211,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
           {/* Modal Close Header */}
           <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
             <div className="flex items-center space-x-2 text-xs text-slate-600 font-semibold">
-              <BookOpen className="w-4 h-4 text-indigo-600" />
+              <BookOpen className="w-4 h-4 text-orange-600" />
               <span>In-App Discovery Reader</span>
             </div>
             <button

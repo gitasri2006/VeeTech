@@ -42,11 +42,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const getTierBadge = (tier: number = 2) => {
     switch (tier) {
       case 1:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Tier 1 Institutional</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-300">Tier 1 Institutional</span>;
       case 2:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Tier 2 Mainstream</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Tier 2 Mainstream</span>;
       case 3:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Tier 3 Regional</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">Tier 3 Regional</span>;
       default:
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">Tier 4 Unverified</span>;
     }
@@ -58,7 +58,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       <div className="p-5 md:p-6 border-b border-slate-100 bg-slate-50/50 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700">
+            <div className="w-5 h-5 rounded bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-700">
               <Newspaper className="w-3 h-3" />
             </div>
             <span className="font-bold text-slate-900 text-xs">{sourceName || 'News Article'}</span>
@@ -132,7 +132,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           href={canonicalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center space-x-1.5 transition shadow-sm flex-shrink-0"
+          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold flex items-center space-x-1.5 transition shadow-sm flex-shrink-0"
         >
           <span>Open Original Article</span>
           <ExternalLink className="w-3.5 h-3.5" />
